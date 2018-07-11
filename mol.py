@@ -4,7 +4,7 @@
 """
 Class Mol of the blend_mol project, contain all the data corresponding to a molecule
 """
-from atom import Atom
+from blend_mol.atom import Atom
 
 
 class Mol():
@@ -15,16 +15,16 @@ class Mol():
         self.path = path # path where is stored
         self.type = None  # cis, cis_detach, trans_detach, trans
         self.data = [] # MOLECULE from file
-        self.atom = [] # list of atoms
-        self.bond = [] # list of links between atoms
+        self.atoms = [] # list of atoms
+        self.bonds = [] # list of links between atoms
 
     def format(self):
         """
         Format raw entries in attributes to have a nice and usable stuff
         """
-        atom_tmp = []
-        atom = Atom()
-        for a in self.atom:
+        atoms_tmp = []
+        for a in self.atoms:
+            atom = Atom()
             tmp = a.split('    ')
             atom.number, atom.name = tmp[0].split(' ')
             if len(tmp[-1].split(' ')) == 3:
@@ -35,6 +35,17 @@ class Mol():
             atom.x = float(tmp[1])
             atom.y = float(tmp[2])
 
-            atom_tmp.append(atom)
+            atoms_tmp.append(atom)
+        self.atoms = atoms_tmp
 
-        self.atom = atom_tmp
+        bonds_tmp = []
+        for b in self.bonds:
+            b = [eval(o) for o in b.split(' ')[1:]]
+            atom1 = self.atoms[b[0]-1]
+            atom2 = self.atoms[b[1]-1]
+            nb_liaisons = b[2]
+            
+            bonds_tmp.append([atom1, atom2, nb_liaisons])
+            
+        self.bonds = bonds_tmp
+        

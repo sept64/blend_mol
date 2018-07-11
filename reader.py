@@ -5,9 +5,8 @@
 Class Reader of the blend_mol project
 allows to read mol2 files and to fill and return mol classes
 """
-
 import os
-from mol import Mol
+from blend_mol.mol import Mol
 
 class Reader():
     def __init__(self, path):
@@ -36,7 +35,7 @@ class Reader():
         keys = self.dict_files.keys()
         molecules = []
 
-        for key in keys:
+        for key in ['cis', 'cis_detach', 'trans_detach', 'trans']:
             tmp_mol = Mol(self.dict_files[key])
             tmp_mol.type = key
             mol = False
@@ -62,9 +61,9 @@ class Reader():
                         elif mol:
                             tmp_mol.data.append(l)
                         elif atom:
-                            tmp_mol.atom.append(l)
+                            tmp_mol.atoms.append(l)
                         elif bond:
-                            tmp_mol.bond.append(l)
+                            tmp_mol.bonds.append(l)
 
             tmp_mol.format()
             molecules.append(tmp_mol)
