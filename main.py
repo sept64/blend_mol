@@ -29,7 +29,6 @@ class BlendMol(bpy.types.Operator):
             if mol.type == 'cis':
                 drawer.draw(mol)
             else:
-                print(mol.type)
                 drawer.move(mol)
                 
             for obj in bpy.data.objects: 

@@ -22,7 +22,7 @@ class Mol():
         """
         Format raw entries in attributes to have a nice and usable stuff
         """
-        atoms_tmp = []
+        atoms_tmp = dict()
         for a in self.atoms:
             atom = Atom()
             tmp = a.split('    ')
@@ -35,7 +35,7 @@ class Mol():
             atom.x = float(tmp[1])
             atom.y = float(tmp[2])
 
-            atoms_tmp.append(atom)
+            atoms_tmp[atom.name] = atom
         self.atoms = atoms_tmp
 
         bonds_tmp = []
