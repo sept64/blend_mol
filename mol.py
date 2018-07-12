@@ -5,47 +5,38 @@
 Class Mol of the blend_mol project, contain all the data corresponding to a molecule
 """
 from blend_mol.atom import Atom
+from blend_mol.state import State
 
+TYPES = ['cis', 'cis_detach', 'trans_detach', 'trans']
 
 class Mol():
     def __init__(self, path):
         """
 
         """
-        self.path = path # path where is stored
-        self.type = None  # cis, cis_detach, trans_detach, trans
-        self.data = [] # MOLECULE from file
-        self.atoms = [] # list of atoms
-        self.bonds = [] # list of links between atoms
-
-    def format(self):
-        """
-        Format raw entries in attributes to have a nice and usable stuff
-        """
-        atoms_tmp = dict()
-        for a in self.atoms:
-            atom = Atom()
-            tmp = a.split('    ')
-            atom.number, atom.name = tmp[0].split(' ')
-            if len(tmp[-1].split(' ')) == 3:
-                atom.z, atom.type = tmp[-1].split(' ')[1:3]
-            else:
-                atom.z, atom.type = tmp[-1].split(' ')
-            atom.z = float(atom.z)
-            atom.x = float(tmp[1])
-            atom.y = float(tmp[2])
-
-            atoms_tmp[atom.name] = atom
-        self.atoms = atoms_tmp
-
-        bonds_tmp = []
-        for b in self.bonds:
-            b = [eval(o) for o in b.split(' ')[1:]]
-            atom1 = self.atoms[b[0]-1]
-            atom2 = self.atoms[b[1]-1]
-            nb_liaisons = b[2]
-            
-            bonds_tmp.append([atom1, atom2, nb_liaisons])
-            
-        self.bonds = bonds_tmp
+        self.__states = [State(path, 'cis'), State(path, 'cis_detach'), State(path, 'trans_detach'), State(path, 'trans')] # Stade can be cis, cis_detach, trans_detach or trans
+        self.__path = path # path where the info of the molecule is stored (files.mol2)
+    
+    # Getter and setter
+    def get_states(self):
+        return self.__states
+    
+    def get_state_by_name(self, name):
+        try:
+            assert (str(name).strip() in TYPES)
+        except:
+            print('**Error: bad type given in mol::get_states : {}'.format(name))
+        return self.__states[TYPES.index(str(name).strip())]
         
+    def get_path(self):
+        return self.__path
+         
+    states = property(get_states)
+    path = property(get_path)
+
+    def read(self):
+        """
+        Read method used to read and load molecules
+        """
+        for state in self.__states:
+            state.read()
