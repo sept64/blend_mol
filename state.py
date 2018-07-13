@@ -25,6 +25,7 @@ class State():
         self.__data = [] # @MOLECULE from file
         self.__atoms = [] # list of atoms
         self.__bonds = [] # list of links between atoms
+        self.__number = TYPES.index(type)
     
     def get_atom_by_number(self, number):
         for a in self.__atoms:
@@ -35,15 +36,26 @@ class State():
         for a in self.__atoms:
             if a.name == name:
                 return a
+        print('**ERROR: no atom found in state::get_atom_by_name name is : {}'.format(name))
+    
+    def get_bond_by_name(self, name):
+        for b in self.__bonds:
+            if b.name == name:
+                return b
+        print('**ERROR: no bond found in state::get_bond_by_name name is : {}'.format(name))
     
     def get_atoms(self):
         return self.__atoms
     
     def get_bonds(self):
         return self.__bonds
+    
+    def get_number(self):
+        return self.__number
         
     atoms = property(get_atoms)
     bonds = property(get_bonds)
+    number = property(get_number)
     
     def read(self):
         """

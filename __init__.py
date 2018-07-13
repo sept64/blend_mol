@@ -7,6 +7,7 @@ modulesNames = ['main', 'mol', 'state', 'atom', 'bond', 'drawer']
 
 import sys
 import importlib
+# C:\Users\Titane64\AppData\Roaming\Blender Foundation\Blender\2.79\scripts\addons
 
 
 modulesFullNames = {}
@@ -16,11 +17,11 @@ for currentModuleName in modulesNames:
 for currentModuleFullName in modulesFullNames.values():
     if currentModuleFullName in sys.modules:
         importlib.reload(sys.modules[currentModuleFullName])
-        print('1er opt : {}'.format(currentModuleFullName))
+
     else:
         globals()[currentModuleFullName] = importlib.import_module(currentModuleFullName)
         setattr(globals()[currentModuleFullName], 'modulesNames', modulesFullNames)
-        print('2eme opt : {}'.format(currentModuleFullName))
+
 
 def register():
     for currentModuleName in modulesFullNames.values():

@@ -8,7 +8,13 @@ allows to draw molecules from Mol class instances
 
 import bpy
 from mathutils import Vector
+from numpy import arange
+from blend_mol.atom import Atom
 
+
+PAS = 120
+BEGIN = 0
+END = PAS*4
 
 class Drawer():
     def __init__(self):
@@ -17,20 +23,25 @@ class Drawer():
         pass
     
     def animate(self, mol):
+        bpy.context.scene.frame_set(BEGIN)
         # Draw cis molecule
         self.draw(mol.get_state_by_name('cis'))
+        for obj in bpy.data.objects: 
+                    obj.keyframe_insert('location', group="LocRot")
         
         # Animate 
-        frame = 0
-        
-        for i in range(len(mol.states)):
+        frame = PAS
+
+        for i in arange(len(mol.states)-1):
             bpy.context.scene.frame_set(frame)
             self.move(mol.states[i], mol.states[i+1])
             
-            for obj in bpy.data.objects: 
-                    obj.keyframe_insert('location', group="LocRot")
-            frame += 120
-        
+            self.save_all_keys()
+            frame += PAS
+
+        bpy.context.scene.frame_end = END
+        bpy.context.scene.frame_set(BEGIN)
+
     def draw(self, state):
         for atom in state.atoms:
             self.add_atom(atom)
@@ -42,8 +53,8 @@ class Drawer():
         bpy.ops.object.select_all(action='DESELECT')
         # Atoms
         # List new atoms
-        new_atoms_str = [atom.name for atom in state_1.atoms]
-        old_atoms_str = [atom.name for atom in state_2.atoms]
+        old_atoms_str = [atom.name for atom in state_1.atoms]
+        new_atoms_str = [atom.name for atom in state_2.atoms]
                 
         to_move = set(new_atoms_str).intersection(old_atoms_str)
         # Move the atoms that exists
@@ -51,115 +62,37 @@ class Drawer():
             new_atom = state_2.get_atom_by_name(o)
             new_loc = Vector([new_atom.x, new_atom.y, new_atom.z])
             bpy.data.objects[o].location = new_loc
-                    
-        return 0
         
         to_create = list(set(new_atoms_str) - set(old_atoms_str))
         for atom in to_create:
-            bpy.ops.mesh.primitive_uv_sphere_add(segments=64, ring_count=32, size=0.2, view_align=False, enter_editmode=False, location=(mol.atoms[atom].x, mol.atoms[atom].y, mol.atoms[atom].z))
-            obj = bpy.context.selected_objects[0]
-            obj.name = mol.atoms[atom].name
-            
-        to_destroy = list(set(old_bonds_str) - set(new_atoms_str))
-        for atom in to_destroy:
-            bpy.ops.object.select_all(action='DESELECT')
-            bpy.data.objects[atom].select = True
-
-            # remove it
-            bpy.ops.object.delete() 
-            
-        # Do links between atoms
-        # List new bonds
-        new_bonds_str = []
-        for bond in mol.bonds:
-            new_bonds_str.append('{}_{}'.format(bond[0].name, bond[1].name))
-        old_bonds_str = []
-        for obj in bpy.data.objects:
-            if '_' in obj.name:
-                old_bonds_str.append(obj.name)
+            self.pick_from_aside_atom(state_2.get_atom_by_name(atom), state_2)
         
-        # Move the bond if it is in the two lists
-        commons = list(set(new_bonds_str).intersection(old_bonds_str))
-        for b in commons:
-            obj = bpy.data.objects[b]
-            v0, v1 = Vector([bond[0].x, bond[0].y, bond[0].z]), Vector([bond[1].x, bond[1].y, bond[1].z])  
-            o = (v1 + v0) / 2
+        to_destroy = list(set(old_atoms_str) - set(new_atoms_str))
+        for atom in to_destroy:
+            self.put_aside_atom(state_1.get_atom_by_name(atom))
+            
+        # Bonds
+        # List new bonds
+        old_bonds_str = [bond.name for bond in state_1.bonds]
+        new_bonds_str = [bond.name for bond in state_2.bonds]
+                
+        to_move = set(new_bonds_str).intersection(old_bonds_str)
+        # Move the atoms that exists
+        for o in to_move:
+            new_bond = state_2.get_bond_by_name(o)
+            new_ob_loc = self.compute_bond_coords(new_bond)
+            bpy.data.objects[o].location = new_ob_loc.location
 
-            curve = bpy.data.curves.new('Curve', 'CURVE')
-            spline = curve.splines.new('²')
-            bp0 = spline.bezier_points[0]
-            bp0.co = v0 - o
-            bp0.handle_left_type = bp0.handle_right_type = 'AUTO'
-
-            spline.bezier_points.add(count=1)
-            bp1 = spline.bezier_points[1]
-            bp1.co = v1 - o
-            bp1.handle_left_type = bp1.handle_right_type = 'AUTO'
-            ob = bpy.data.objects.new('{}_{}'.format(bond[0].name, bond[1].name), curve)
-            ob.matrix_world.translation = o
-            
-            context = bpy.context
-            scene = context.scene
-            #ob = context.object
-            #mw = ob.matrix_world
-            #me = ob.data
-            
-            curve = ob.data    
-            curve.dimensions = '3D'
-            curve.bevel_depth = 0.025
-            curve.bevel_resolution = 10 
-            curve.fill_mode = 'FULL'
-            obj.location = ob.location
-            
-        # Create the bond if it is in the new_bonds_str but not in the old_bonds_str
         to_create = list(set(new_bonds_str) - set(old_bonds_str))
-        print('TO CREATE')
-        print(to_create)
-        for bond in to_create:
-            # Total paste from https://blender.stackexchange.com/questions/110177/connecting-two-points-with-a-line-curve-via-python-script
-            v0 = Vector(bpy.data.objects[bond.split('_')[0]].location)
-            v1 = Vector(bpy.data.objects[bond.split('_')[1]].location)
-            o = (v1 + v0) / 2  
-
-            curve = bpy.data.curves.new('Curve', 'CURVE')
-            spline = curve.splines.new('BEZIER')
-            bp0 = spline.bezier_points[0]
-            bp0.co = v0 - o
-            bp0.handle_left_type = bp0.handle_right_type = 'AUTO'
-
-            spline.bezier_points.add(count=1)
-            bp1 = spline.bezier_points[1]
-            bp1.co = v1 - o
-            bp1.handle_left_type = bp1.handle_right_type = 'AUTO'
-            ob = bpy.data.objects.new(bond, curve)
-            ob.matrix_world.translation = o
-            
-            context = bpy.context
-            scene = context.scene
-            #ob = context.object
-            #mw = ob.matrix_world
-            #me = ob.data
-            
-            curve = ob.data    
-            curve.dimensions = '3D'
-            curve.bevel_depth = 0.010
-            curve.bevel_resolution = 3 
-            
-            scene.objects.link(ob)
-
-            # Convert everything to a mesh
-            bpy.ops.object.select_all(action='SELECT')
-            bpy.ops.object.convert(target='MESH')
-            
+        for atom in to_create:
+            self.pick_from_aside_atom(state_2.get_atom_by_name(atom), state_2)
+        
         to_destroy = list(set(old_bonds_str) - set(new_bonds_str))
-        print('TO Destroy')
-        print(to_destroy)
-        for bond in to_destroy:
-            bpy.ops.object.select_all(action='DESELECT')
-            bpy.data.objects[bond.split('_')[0]].select = True
-
-            # remove it
-            bpy.ops.object.delete() 
+        for atom in to_destroy:
+            self.put_aside_atom(state_1.get_atom_by_name(atom))
+   
+            
+        return 0
     
     def add_atom(self, atom):
         """
@@ -174,21 +107,11 @@ class Drawer():
         Draw a bond in blender
         """
         # Total paste from https://blender.stackexchange.com/questions/110177/connecting-two-points-with-a-line-curve-via-python-script
-        v0, v1 = Vector([bond.atoms[0].x, bond.atoms[0].y, bond.atoms[0].z]), Vector([bond.atoms[1].x, bond.atoms[1].y, bond.atoms[1].z])  
-        o = (v1 + v0) / 2  
+        ob = self.compute_bond_coords(bond)
 
-        curve = bpy.data.curves.new('Curve', 'CURVE')
-        spline = curve.splines.new('BEZIER')
-        bp0 = spline.bezier_points[0]
-        bp0.co = v0 - o
-        bp0.handle_left_type = bp0.handle_right_type = 'AUTO'
-
-        spline.bezier_points.add(count=1)
-        bp1 = spline.bezier_points[1]
-        bp1.co = v1 - o
-        bp1.handle_left_type = bp1.handle_right_type = 'AUTO'
-        ob = bpy.data.objects.new(bond.name, curve)
-        ob.matrix_world.translation = o
+        #curve = ob.data # bpy.data.curves.new('Curve', 'CURVE')
+        #ob = bpy.data.objects.new(bond.name, curve)
+        #ob.location = loc
         
         context = bpy.context
         scene = context.scene
@@ -204,6 +127,58 @@ class Drawer():
         # Convert everything to a mesh
         bpy.ops.object.select_all(action='SELECT')
         bpy.ops.object.convert(target='MESH')
+  
+    def compute_bond_coords(self, bond):
+        v0, v1 = Vector([bond.atoms[0].x, bond.atoms[0].y, bond.atoms[0].z]), Vector([bond.atoms[1].x, bond.atoms[1].y, bond.atoms[1].z])  
+        o = (v1 + v0) / 2
+
+        curve = bpy.data.curves.new('Curve', 'CURVE')
+        spline = curve.splines.new('BEZIER')
+        bp0 = spline.bezier_points[0]
+        bp0.co = v0 - o
+        bp0.handle_left_type = bp0.handle_right_type = 'AUTO'
+
+        spline.bezier_points.add(count=1)
+        bp1 = spline.bezier_points[1]
+        bp1.co = v1 - o
+        bp1.handle_left_type = bp1.handle_right_type = 'AUTO'
+        ob = bpy.data.objects.new(bond.name, curve)
+        ob.matrix_world.translation = o
+        return ob
         
-    def remove_object(self, obj):
-        pass
+    def put_aside_atom(self, atom):
+        # bpy.ops.object.select_all(action='DESELECT')
+        # bpy.data.objects[atom.name].select = True
+        bpy.data.objects[atom.name].location = Vector([0,0,0])
+        
+    def pick_from_aside_atom(self, atom, state):
+        try:
+            # bpy.data.objects[atom.name].select = True
+            bpy.data.objects[atom.name].location = Vector([atom.x,atom.y,atom.z])
+        except:
+            # Frame  = 0
+            bpy.context.scene.frame_set(BEGIN)
+            # Add atom
+            atom_tmp = Atom()
+            atom_tmp.number = atom.number
+            atom_tmp.name = atom.name
+            atom_tmp.type = atom.type
+            atom_tmp.x = 0.0
+            atom_tmp.y = 0.0
+            atom_tmp.z = 0.0        
+            self.add_atom(atom_tmp)
+            # Save keys
+            self.save_all_keys()
+            # Frame = X
+            bpy.context.scene.frame_set(state.number*PAS)
+            # Move atom
+            # bpy.ops.object.select_all(action='DESELECT')
+            # bpy.data.objects[atom.name].select = True
+            bpy.data.objects[atom.name].location = Vector([atom.x, atom.y, atom.z])
+            # Save keys again
+            self.save_all_keys()
+        
+    def save_all_keys(self):        
+        for obj in bpy.data.objects: 
+                        obj.keyframe_insert('location', group="LocRot")
+        
