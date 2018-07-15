@@ -15,23 +15,26 @@ class Bond():
         self.__atoms = None
         self.__order = None
         self.__name = None
-        
+
     def set_atoms(self, tab_a):
         self.__atoms = [tab_a[0], tab_a[1]]
         self.__name = '{}_{}'.format(tab_a[0].name, tab_a[1].name)
-    
+
     def set_order(self, nb):
-        self.__order = nb
-    
+        self.__order = int(nb)
+
     def get_order(self):
         return self.__order
-    
+
     def get_atoms(self):
         return self.__atoms
-    
+
     def get_name(self):
         return self.__name
-    
+
+    def reset_name(self):
+        self.__name = '{}_{}'.format(self.__atoms[0].name, self.__atoms[1].name)
+
     order = property(get_order, set_order)
     atoms = property(get_atoms, set_atoms)
     name = property(get_name)

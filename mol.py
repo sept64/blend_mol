@@ -4,6 +4,7 @@
 """
 Class Mol of the blend_mol project, contain all the data corresponding to a molecule
 """
+from numpy import arange
 from blend_mol.atom import Atom
 from blend_mol.state import State
 
@@ -40,3 +41,17 @@ class Mol():
         """
         for state in self.__states:
             state.read()
+
+        self.__states[0].rename(diffs=None)
+        for i in arange(1, len(self.__states)):
+            # Compute differences between states mol
+            detach= self.get_detach(self.__states[i])
+            # Rename everything
+            self.__states[i].rename(detach)
+
+    def get_detach(self,state):
+        detach_atom = []
+        for atom in state.atoms:
+            if not atom.is_full():
+                detach_atom.append(atom)
+        return detach_atom

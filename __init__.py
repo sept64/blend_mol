@@ -7,6 +7,7 @@ modulesNames = ['main', 'mol', 'state', 'atom', 'bond', 'drawer']
 
 import sys
 import importlib
+
 # C:\Users\Titane64\AppData\Roaming\Blender Foundation\Blender\2.79\scripts\addons
 
 
@@ -29,11 +30,13 @@ def register():
             if hasattr(sys.modules[currentModuleName], 'register'):
                 sys.modules[currentModuleName].register()
 
+
 def unregister():
     for currentModuleName in modulesFullNames.values():
         if currentModuleName in sys.modules:
             if hasattr(sys.modules[currentModuleName], 'unregister'):
                 sys.modules[currentModuleName].unregister()
+
 
 if __name__ == "__main__":
     register()
