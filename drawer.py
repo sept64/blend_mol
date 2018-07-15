@@ -22,10 +22,28 @@ class Drawer():
     def __init__(self):
         """
         """
-        pass
+        self.__materials = dict()
+        self.__init_metrials()
+
+    def __init_metrials(self):
+        # Purge existing materials
+        for tmp_mat in bpy.data.materials:
+            bpy.data.materials.remove(tmp_mat)
+
+        self.__materials['C'] = bpy.data.materials.new(name='C_mat')  # set new material to variable
+        self.__materials['H'] = bpy.data.materials.new(name='H_mat')  # set new material to variable
+        self.__materials['O'] = bpy.data.materials.new(name='O_mat')  # set new material to variable
+
+        self.__materials['C'].diffuse_color = (0, 0, 0)  # change color
+        self.__materials['H'].diffuse_color = (1, 1, 1)  # change color
+        self.__materials['H'].emit = 1
+        self.__materials['O'].diffuse_color = (1, 0, 0)  # change color
+        self.__materials['O'].emit = 1
+
 
     def animate(self, mol):
         bpy.context.scene.frame_set(BEGIN)
+
         # Draw cis molecule
         self.draw(mol.get_state_by_name('cis'))
 
@@ -111,6 +129,7 @@ class Drawer():
                                              enter_editmode=False, location=(atom.x, atom.y, atom.z))
         obj = bpy.context.selected_objects[0]
         obj.name = atom.name
+        obj.data.materials.append(self.__materials[atom.type])  # add the material to the object
 
     def add_bond(self, bond):
         """
