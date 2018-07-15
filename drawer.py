@@ -127,6 +127,7 @@ class Drawer():
         """
         bpy.ops.mesh.primitive_uv_sphere_add(segments=64, ring_count=32, size=0.2, view_align=False,
                                              enter_editmode=False, location=(atom.x, atom.y, atom.z))
+        bpy.ops.object.shade_smooth()
         obj = bpy.context.selected_objects[0]
         obj.name = atom.name
         obj.data.materials.append(self.__materials[atom.type])  # add the material to the object
@@ -224,7 +225,7 @@ class Drawer():
     def put_aside_atom(self, atom):
         # bpy.ops.object.select_all(action='DESELECT')
         # bpy.data.objects[atom.name].select = True
-        bpy.data.objects[atom.name].location = Vector([0, 0, 0])
+        bpy.data.objects[atom.name].location = Vector([0, 0, -10])
 
     def pick_from_aside_atom(self, atom, state):
         try:
@@ -242,6 +243,8 @@ class Drawer():
             atom_tmp.z = -10.0
             self.add_atom(atom_tmp)
             # Save keys
+            self.save_keys(atom_tmp.name)
+            bpy.context.scene.frame_set((state.number-1) * PAS)
             self.save_keys(atom_tmp.name)
             # Frame = X
             bpy.context.scene.frame_set((state.number) * PAS)
