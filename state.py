@@ -10,7 +10,7 @@ from blend_mol.bond import Bond
 TYPES = ['cis', 'cis_detach', 'trans_detach', 'trans']
 
 
-class State():
+class State:
     def __init__(self, path, type):
         """
 
@@ -115,111 +115,6 @@ class State():
             b = [eval(o) for o in b.split(' ')[1:]]
             a1 = self.__get_atom_by_number(b[0])
             a2 = self.__get_atom_by_number(b[1])
-            a1.add_bonded_atom(a2)
-            a2.add_bonded_atom(a1)
             bond.atoms = [a1, a2]
             bond.order = b[2]
             self.__bonds.append(bond)
-            a1.bonds.append(bond)
-            a2.bonds.append(bond)
-
-    def rename(self, diffs):
-        # Find first C atom == atom not linked with two C
-        first_c = self.get_first_c_atom()
-        # rename it
-        considered_atom = first_c
-        considered_atom.name = 'C01'
-        count = 2
-        # Browse all C atom and rename them
-        end = False
-        list_c = []
-        while not end:
-            end = True
-            for atom in considered_atom.bonded_with:
-                if atom.type == 'C' and atom.renamed == False:
-                    if count < 10:
-                        atom.name = 'C0{}'.format(count)
-                    else:
-                        atom.name = 'C{}'.format(count)
-                    atom.renamed = True
-                    end = False
-                    considered_atom = atom
-                    count += 1
-                    list_c.append(atom)
-
-        # Browse all O atoms linked to the C
-        list_o = []
-        for considered_atom in list_c:
-            for atom in considered_atom.bonded_with:
-                if atom.type == 'O' and atom.renamed == False:
-                    if len(list_o) + 1 < 10:
-                        atom.name = 'O0{}'.format(len(list_o) + 1)
-                    else:
-                        atom.name = 'O{}'.format(len(list_o) + 1)
-                    atom.renamed = True
-                    list_o.append(atom)
-        # Browse all H atoms linked to the O
-        list_h = []
-        for considered_atom in list_o:
-            for atom in considered_atom.bonded_with:
-                if atom.type == 'H' and atom.renamed == False:
-                    if len(list_h) + 1 < 10:
-                        atom.name = 'H0{}'.format(len(list_h) + 1)
-                    else:
-                        atom.name = 'H{}'.format(len(list_h) + 1)
-                    atom.renamed = True
-                    list_h.append(atom)
-
-        if not diffs:
-            # Browse all H atoms linked to the C
-            for considered_atom in list_c:
-                for atom in considered_atom.bonded_with:
-                    if atom.type == 'H' and atom.renamed == False:
-                        if len(list_h) + 1 < 10:
-                            atom.name = 'H0{}'.format(len(list_h) + 1)
-                        else:
-                            atom.name = 'H{}'.format(len(list_h) + 1)
-                        atom.renamed = True
-                        list_h.append(atom)
-
-        else:
-            # Browse all H atoms linked to the C
-            count = len(list_h) + 1
-            mem_tmp = []
-            print('Detached : ')
-            for d in diffs:
-                print(d.name)
-            for considered_atom in list_c:
-                if not considered_atom in diffs:
-                    for atom in considered_atom.bonded_with:
-                        if atom.type == 'H' and atom.renamed == False:
-                            if count < 10:
-                                atom.name = 'H0{}'.format(count)
-                            else:
-                                atom.name = 'H{}'.format(count)
-                            atom.renamed = True
-                            count += 1
-                            list_h.append(atom)
-                else:
-                    mem_tmp.append(count)
-                    count += 1
-
-            i = 0
-            print(mem_tmp)
-            for atom in self.__atoms:
-                if not atom.renamed:
-                    if mem_tmp[i] < 10:
-                        atom.name = 'H0{}'.format(mem_tmp[i])
-                    else:
-                        atom.name = 'H{}'.format(mem_tmp[i])
-                    i += 1
-                    atom.renamed = True
-
-        for b in self.__bonds:
-            b.reset_name()
-
-    def get_first_c_atom(self):
-        for atom in self.__atoms:
-            if atom.type == 'C':
-                if atom.is_first():
-                    return atom
