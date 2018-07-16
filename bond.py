@@ -7,7 +7,7 @@ Class Bond of the blend_mol project, contain all the data corresponding to a lin
 from blend_mol.atom import Atom
 
 
-class Bond():
+class Bond:
     def __init__(self):
         """
 

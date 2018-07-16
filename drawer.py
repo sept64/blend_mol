@@ -18,12 +18,15 @@ BEGIN = 0
 END = PAS * 4
 
 
-class Drawer():
-    def __init__(self):
+class Drawer:
+    def __init__(self, mol):
         """
         """
+        self.__mol = mol
+
         self.__materials = dict()
         self.__init_metrials()
+        self.__init_animation()
 
     def __init_metrials(self):
         # Purge existing materials
@@ -45,24 +48,24 @@ class Drawer():
         self.__materials['H'].specular_intensity = 0
         self.__materials['O'].specular_intensity = 0
 
-    def animate(self, mol):
+    def __init_animation(self):
+        bpy.context.scene.frame_end = END
+
+    def animate(self):
         bpy.context.scene.frame_set(BEGIN)
 
         # Draw cis molecule
-        self.draw(mol.get_state_by_name('cis'))
-
+        self.draw(self.__mol.get_state_by_name('cis'))
         self.save_keys('')
 
         # Animate 
         frame = PAS
 
-        for i in arange(len(mol.states) - 1):
+        for i in arange(len(self.__mol.states) - 1):
             bpy.context.scene.frame_set(frame)
-            self.move(mol.states[i], mol.states[i + 1])
+            self.move(self.__mol.states[i], self.__mol.states[i + 1])
             self.save_keys('')
             frame += PAS
-
-        bpy.context.scene.frame_end = END
         bpy.context.scene.frame_set(BEGIN)
 
     def draw(self, state):
@@ -120,7 +123,7 @@ class Drawer():
         to_destroy = list(set(old_bonds_str) - set(new_bonds_str))
         print('to_destroy : {}'.format(to_destroy))
         for bond in to_destroy:
-            self.bond_disappear(state_1.get_bond_by_name(bond), state_2, True)
+            self.bond_disappear(state_1.get_bond_by_name(bond), state_2)
 
     def add_atom(self, atom):
         """
@@ -248,9 +251,36 @@ class Drawer():
         # Two possibilities : 1 the bond exists but it's hidden
         # 2 the bond doesn't exists
         try:
-            bond_disappear(bond, state, False)
+            # Fade in
+            bpy.context.scene.frame_set((state.number - 1) * PAS)
+            bpy.data.materials[bond.name].alpha = 0
+            bpy.data.materials[bond.name].keyframe_insert(data_path='alpha')
+            bpy.context.scene.frame_set(state.number * PAS)
+            bpy.data.materials[bond.name].alpha = 1
+            bpy.data.materials[bond.name].keyframe_insert(data_path='alpha')
+            # Move them !
+            # Get old bound atoms positions etc.
+
+            found = False
+            i = 0
+            while not found:
+                state = self.__mol.states[i]
+                for b in state.bonds:
+                    if b.name == bond.name:
+                        old_bond = b
+                        found = True
+                        break
+                i += 1
+            # Compute rotation and translation
+            translation, euler_xyz = self.compute_translation_rotation_bonds(old_bond, bond)
+            bpy.data.objects[bond.name].location += translation
+            bpy.data.objects[bond.name].rotation_mode = 'XYZ'
+            bpy.data.objects[bond.name].rotation_euler = euler_xyz
+            self.save_keys(bond.name)
+            print('Fade in of {}'.format(bond.name))
 
         except:
+            print('Adding {}'.format(bond.name))
             # Add bond
             self.add_bond(bond)
             # Hide it from the start
@@ -265,20 +295,13 @@ class Drawer():
             bpy.data.materials[bond.name].alpha = 1
             bpy.data.materials[bond.name].keyframe_insert(data_path='alpha')
 
-    def bond_disappear(self, bond, state, bool):
-        if bool:
-            # Fade out
-            bpy.context.scene.frame_set((state.number - 1) * PAS)
-            bpy.data.materials[bond.name].alpha = 1
-            bpy.data.materials[bond.name].keyframe_insert(data_path='alpha')
-            bpy.context.scene.frame_set(state.number * PAS)
-            bpy.data.materials[bond.name].alpha = 0
-            bpy.data.materials[bond.name].keyframe_insert(data_path='alpha')
-        else:
-            # Fade in
-            bpy.context.scene.frame_set((state.number - 1) * PAS)
-            bpy.data.materials[bond.name].alpha = 0
-            bpy.data.materials[bond.name].keyframe_insert(data_path='alpha')
-            bpy.context.scene.frame_set(state.number * PAS)
-            bpy.data.materials[bond.name].alpha = 1
-            bpy.data.materials[bond.name].keyframe_insert(data_path='alpha')
+    def bond_disappear(self, bond, state):
+        # Fade out
+        print('Fade out of {}'.format(bond.name))
+        bpy.context.scene.frame_set((state.number - 1) * PAS)
+        bpy.data.materials[bond.name].alpha = 1
+        bpy.data.materials[bond.name].keyframe_insert(data_path='alpha')
+        bpy.context.scene.frame_set(state.number * PAS)
+        bpy.data.materials[bond.name].alpha = 0
+        bpy.data.materials[bond.name].keyframe_insert(data_path='alpha')
+

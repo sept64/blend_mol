@@ -24,8 +24,8 @@ class BlendMol(bpy.types.Operator):
         mol.read()
 
         # Draw and animate
-        drawer = Drawer()
-        drawer.animate(mol)
+        drawer = Drawer(mol)
+        drawer.animate()
 
         return {'FINISHED'}
 

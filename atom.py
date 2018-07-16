@@ -7,7 +7,7 @@ Class Atom of the blend_mol project, contain all the data corresponding to an at
 ATOM_TYPE = ['C', 'H', 'O']
 
 
-class Atom():
+class Atom:
     def __init__(self):
         """
 
