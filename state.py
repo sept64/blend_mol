@@ -53,9 +53,13 @@ class State:
     def get_number(self):
         return self.__number
 
+    def get_type(self):
+        return self.__type
+
     atoms = property(get_atoms)
     bonds = property(get_bonds)
     number = property(get_number)
+    type = property(get_type)
 
     def read(self):
         """

@@ -7,11 +7,10 @@ allows to draw molecules from Mol class instances
 """
 
 import bpy
-from mathutils import Vector, Quaternion
 import math
-
-from numpy import arange
 from blend_mol.atom import Atom
+from mathutils import Vector, Quaternion
+from numpy import arange
 
 PAS = 120
 BEGIN = 0
@@ -54,17 +53,21 @@ class Drawer:
     def animate(self):
         bpy.context.scene.frame_set(BEGIN)
 
-        # Draw cis molecule
+        # Draw cis molecules
         self.draw(self.__mol.get_state_by_name('cis'))
+
         self.save_keys('')
 
         # Animate 
         frame = PAS
-
-        for i in arange(len(self.__mol.states) - 1):
+        i=0
+        #for i in arange(len(self.__mol.states) - 1):
+        while i <len(self.__mol.states) - 1:
             bpy.context.scene.frame_set(frame)
-            self.move(self.__mol.states[i], self.__mol.states[i + 1])
+            self.move(i, i + 1)
+            bpy.context.scene.frame_set(frame)
             self.save_keys('')
+            i += 1
             frame += PAS
         bpy.context.scene.frame_set(BEGIN)
 
@@ -75,7 +78,12 @@ class Drawer:
         for bond in state.bonds:
             self.add_bond(bond)
 
-    def move(self, state_1, state_2):
+    def move(self, index_start, index_end):
+
+        state_1 = self.__mol.states[index_start]
+        state_2 = self.__mol.states[index_end]
+        print('Computing move between state {} and state {}'.format(state_1.type, state_2.type))
+
         bpy.ops.object.select_all(action='DESELECT')
         # Atoms
         # List new atoms
@@ -104,6 +112,7 @@ class Drawer:
         new_bonds_str = [bond.name for bond in state_2.bonds]
 
         to_move = set(new_bonds_str).intersection(old_bonds_str)
+
         # Move the bond that exists
         for o in to_move:
             new_bond = state_2.get_bond_by_name(o)
@@ -112,16 +121,21 @@ class Drawer:
             translation, euler_xyz = self.compute_translation_rotation_bonds(old_bond, new_bond)
             bpy.data.objects[o].location += translation
             bpy.data.objects[o].rotation_mode = 'XYZ'
-            bpy.data.objects[o].rotation_euler = euler_xyz
+            euler_x = bpy.data.objects[o].rotation_euler[0] + euler_xyz[0]
+            euler_y = bpy.data.objects[o].rotation_euler[1] + euler_xyz[1]
+            euler_z = bpy.data.objects[o].rotation_euler[2] + euler_xyz[2]
+            bpy.data.objects[o].rotation_euler =  (euler_x, euler_y, euler_z)
+            if o == 'C11_C14':
+                print('Moved bond : {} of angle : {}'.format(o, [math.degrees(o) for o in euler_xyz]))
             self.save_keys(o)
 
         to_create = list(set(new_bonds_str) - set(old_bonds_str))
-        print('to_create : {}'.format(to_create))
+        # print('to_create : {}'.format(to_create))
         for bond in to_create:
             self.bond_appear(state_2.get_bond_by_name(bond), state_2)
 
         to_destroy = list(set(old_bonds_str) - set(new_bonds_str))
-        print('to_destroy : {}'.format(to_destroy))
+        # print('to_destroy : {}'.format(to_destroy))
         for bond in to_destroy:
             self.bond_disappear(state_1.get_bond_by_name(bond), state_2)
 
@@ -145,10 +159,6 @@ class Drawer:
         self.__materials[bond.name] = bpy.data.materials.new(name=bond.name)
         self.__materials[bond.name].use_transparency = True
         ob.data.materials.append(self.__materials[bond.name])
-
-        # curve = ob.data # bpy.data.curves.new('Curve', 'CURVE')
-        # ob = bpy.data.objects.new(bond.name, curve)
-        # ob.location = loc
 
         context = bpy.context
         scene = context.scene
@@ -275,12 +285,16 @@ class Drawer:
             translation, euler_xyz = self.compute_translation_rotation_bonds(old_bond, bond)
             bpy.data.objects[bond.name].location += translation
             bpy.data.objects[bond.name].rotation_mode = 'XYZ'
+            euler_x = bpy.data.objects[o].rotation_euler[0] + euler_xyz[0]
+            euler_y = bpy.data.objects[o].rotation_euler[1] + euler_xyz[1]
+            euler_z = bpy.data.objects[o].rotation_euler[2] + euler_xyz[2]
+            bpy.data.objects[o].rotation_euler = (euler_x, euler_y, euler_z)
             bpy.data.objects[bond.name].rotation_euler = euler_xyz
             self.save_keys(bond.name)
-            print('Fade in of {}'.format(bond.name))
+            # print('Fade in of {}'.format(bond.name))
 
         except:
-            print('Adding {}'.format(bond.name))
+            # print('Adding {}'.format(bond.name))
             # Add bond
             self.add_bond(bond)
             # Hide it from the start
@@ -297,11 +311,10 @@ class Drawer:
 
     def bond_disappear(self, bond, state):
         # Fade out
-        print('Fade out of {}'.format(bond.name))
+        # print('Fade out of {}'.format(bond.name))
         bpy.context.scene.frame_set((state.number - 1) * PAS)
         bpy.data.materials[bond.name].alpha = 1
         bpy.data.materials[bond.name].keyframe_insert(data_path='alpha')
         bpy.context.scene.frame_set(state.number * PAS)
         bpy.data.materials[bond.name].alpha = 0
         bpy.data.materials[bond.name].keyframe_insert(data_path='alpha')
-
