@@ -130,41 +130,15 @@ class Drawer:
                     # euler_xyz[i] = 0.0
                 i += 1
             """
-            print('Computed angles for : {} angles : {}'.format(o, [math.degrees(o) for o in euler_xyz]))
-
-
             orig_loc, orig_rot, orig_scale = bpy.data.objects[o].matrix_world.decompose()
             orig_loc_mat = Matrix.Translation(orig_loc)
             orig_rot_mat = orig_rot.to_matrix().to_4x4()
             orig_scale_mat = Matrix.Scale(orig_scale[0], 4, (1, 0, 0)) * Matrix.Scale(orig_scale[1], 4, (0, 1, 0))
 
             bpy.data.objects[o].matrix_world = orig_loc_mat * matrix_rotation_new * orig_rot_mat * orig_scale_mat
-            # bpy.data.objects[o].matrix_world *= m_y
-            # bpy.data.objects[o].matrix_world *= m_z
+
             bpy.data.objects[o].location += translation
-            # bpy.data.objects[o].matrix_world.rotate(m_y)
-            # bpy.data.objects[o].matrix_world.rotate(m_z)
 
-            # euler_x = bpy.data.objects[o].rotation_euler[0] + euler_xyz[0]
-            # euler_y = bpy.data.objects[o].rotation_euler[1] + euler_xyz[1]
-            # euler_z = bpy.data.objects[o].rotation_euler[2] + euler_xyz[2]
-            #
-            # euler_xyz = bpy.data.objects[o].rotation_euler[0] + euler_xyz[0] #  * m_x * m_y * m_z
-            # euler_y = bpy.data.objects[o].rotation_euler[1] + euler_xyz[1]
-            # euler_z = bpy.data.objects[o].rotation_euler[2] + euler_xyz[2]
-
-            # if not -170 <= math.degrees(euler_x) <= 170:
-            #     euler_x = 0
-            # if not -170 <= math.degrees(euler_y) <= 170:
-            #     euler_y = 0
-            # if not -170 <= math.degrees(euler_z) <= 170:
-            #     euler_z = 0
-
-            # bpy.data.objects[o].rotation_mode = 'XYZ'
-            # bpy.data.objects[o].rotation_euler = Vector((euler_x, euler_y, euler_z))
-
-            # print('Moved bond : {} of angle : {}'.format(o, [math.degrees(o) for o in [euler_x, euler_y, euler_z]]))
-            # bpy.ops.object.transform_apply(location=False, rotation=True, scale=False)
             self.save_keys(o)
 
         to_create = list(set(new_bonds_str) - set(old_bonds_str))
@@ -319,7 +293,7 @@ class Drawer:
             bpy.data.materials[bond.name].keyframe_insert(data_path='alpha')
             # Move them !
             # Get old bound atoms positions etc.
-
+            old_bond = None
             found = False
             i = 0
             while not found:
@@ -330,15 +304,21 @@ class Drawer:
                         found = True
                         break
                 i += 1
+
             # Compute rotation and translation
             translation, euler_xyz = self.compute_translation_rotation_bonds(old_bond, bond)
+            # Convert euler angles into matrix rotation
+            matrix_rotation_new = euler_xyz.to_matrix().to_4x4()
+
+            orig_loc, orig_rot, orig_scale = bpy.data.objects[bond.name].matrix_world.decompose()
+            orig_loc_mat = Matrix.Translation(orig_loc)
+            orig_rot_mat = orig_rot.to_matrix().to_4x4()
+            orig_scale_mat = Matrix.Scale(orig_scale[0], 4, (1, 0, 0)) * Matrix.Scale(orig_scale[1], 4, (0, 1, 0))
+
+            bpy.data.objects[bond.name].matrix_world = orig_loc_mat * matrix_rotation_new * orig_rot_mat * orig_scale_mat
+
             bpy.data.objects[bond.name].location += translation
-            bpy.data.objects[bond.name].rotation_mode = 'XYZ'
-            euler_x = bpy.data.objects[o].rotation_euler[0] + euler_xyz[0]
-            euler_y = bpy.data.objects[o].rotation_euler[1] + euler_xyz[1]
-            euler_z = bpy.data.objects[o].rotation_euler[2] + euler_xyz[2]
-            bpy.data.objects[o].rotation_euler = (euler_x, euler_y, euler_z)
-            bpy.data.objects[bond.name].rotation_euler = euler_xyz
+
             self.save_keys(bond.name)
             # print('Fade in of {}'.format(bond.name))
 
