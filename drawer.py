@@ -119,17 +119,28 @@ class Drawer:
             old_bond = state_1.get_bond_by_name(o)
             # Compute rotation and translation
             translation, euler_xyz = self.compute_translation_rotation_bonds(old_bond, new_bond)
+            # Convert euler angles into matrix rotation
+            matrix_rotation_new = euler_xyz.to_matrix().to_4x4()
 
-
-
+            """
+            i=0
+            while i < len(euler_xyz):
+                if abs(euler_xyz[i]) ==  abs(bpy.data.objects[o].rotation_euler[i]):
+                    # math.copysign(euler_xyz[i], bpy.data.objects[o].rotation_euler[i])
+                    # euler_xyz[i] = 0.0
+                i += 1
+            """
             print('Computed angles for : {} angles : {}'.format(o, [math.degrees(o) for o in euler_xyz]))
-            m_x = Matrix.Rotation(euler_xyz[0], 4, 'X')
-            m_y = Matrix.Rotation(euler_xyz[1], 4, 'Y')
-            m_z = Matrix.Rotation(euler_xyz[2], 4, 'Z')
 
-            bpy.data.objects[o].matrix_world *= m_x
-            bpy.data.objects[o].matrix_world *= m_y
-            bpy.data.objects[o].matrix_world *= m_z
+
+            orig_loc, orig_rot, orig_scale = bpy.data.objects[o].matrix_world.decompose()
+            orig_loc_mat = Matrix.Translation(orig_loc)
+            orig_rot_mat = orig_rot.to_matrix().to_4x4()
+            orig_scale_mat = Matrix.Scale(orig_scale[0], 4, (1, 0, 0)) * Matrix.Scale(orig_scale[1], 4, (0, 1, 0))
+
+            bpy.data.objects[o].matrix_world = orig_loc_mat * matrix_rotation_new * orig_rot_mat * orig_scale_mat
+            # bpy.data.objects[o].matrix_world *= m_y
+            # bpy.data.objects[o].matrix_world *= m_z
             bpy.data.objects[o].location += translation
             # bpy.data.objects[o].matrix_world.rotate(m_y)
             # bpy.data.objects[o].matrix_world.rotate(m_z)
@@ -153,7 +164,7 @@ class Drawer:
             # bpy.data.objects[o].rotation_euler = Vector((euler_x, euler_y, euler_z))
 
             # print('Moved bond : {} of angle : {}'.format(o, [math.degrees(o) for o in [euler_x, euler_y, euler_z]]))
-            bpy.ops.object.transform_apply(location=False, rotation=True, scale=False)
+            # bpy.ops.object.transform_apply(location=False, rotation=True, scale=False)
             self.save_keys(o)
 
         to_create = list(set(new_bonds_str) - set(old_bonds_str))
@@ -217,6 +228,9 @@ class Drawer:
         # Rotation
         old_bond_vec = Vector([old_bond.atoms[1].x - old_bond.atoms[0].x, old_bond.atoms[1].y - old_bond.atoms[0].y,
                                old_bond.atoms[1].z - old_bond.atoms[0].z])
+        new_bond_vec = Vector([new_bond.atoms[1].x - new_bond.atoms[0].x, new_bond.atoms[1].y - new_bond.atoms[0].y,
+                               new_bond.atoms[1].z - new_bond.atoms[0].z])
+
         print('OldBond 0 = [{}, {}, {}], 1 = [{}, {}, {}]'.format(old_bond.atoms[0].x, old_bond.atoms[0].y,
                                                                   old_bond.atoms[0].z,
                                                                   old_bond.atoms[1].x, old_bond.atoms[1].y,
@@ -225,21 +239,6 @@ class Drawer:
                                                                   new_bond.atoms[0].z,
                                                                   new_bond.atoms[1].x, new_bond.atoms[1].y,
                                                                   new_bond.atoms[1].z))
-        new_bond_vec = Vector([new_bond.atoms[1].x - new_bond.atoms[0].x, new_bond.atoms[1].y - new_bond.atoms[0].y,
-                               new_bond.atoms[1].z - new_bond.atoms[0].z])
-
-        # old = bpy.data.objects[old_bond.name].rotation_euler
-        # old_bond_vec = Vector([old[0], old[1], old[2]])
-        # new_bond_vec = Vector([new_bond.atoms[1].x - new_bond.atoms[0].x, new_bond.atoms[1].y - new_bond.atoms[0].y,
-        #                        new_bond.atoms[1].z - new_bond.atoms[0].z])
-        # print('OldBond 0 = [{}, {}, {}], 1 = [{}, {}, {}]'.format(old_bond.atoms[0].x, old_bond.atoms[0].y,
-        #                                                           old_bond.atoms[0].z,
-        #                                                           old_bond.atoms[1].x, old_bond.atoms[1].y,
-        #                                                           old_bond.atoms[1].z))
-        # print('NewBond 0 = [{}, {}, {}], 1 = [{}, {}, {}]'.format(new_bond.atoms[0].x, new_bond.atoms[0].y,
-        #                                                           new_bond.atoms[0].z,
-        #                                                           new_bond.atoms[1].x, new_bond.atoms[1].y,
-        #                                                           new_bond.atoms[1].z))
 
         rotation = old_bond_vec.rotation_difference(new_bond_vec).to_euler()
         return translation, rotation
