@@ -78,6 +78,10 @@ class Drawer:
         for bond in state.bonds:
             self.add_bond(bond)
 
+        # Add bones to animate correctly the molecule
+        for bond in state.bonds:
+            self.add_bone(bond)
+
     def move(self, index_start, index_end):
 
         state_1 = self.__mol.states[index_start]
@@ -155,8 +159,12 @@ class Drawer:
         """
         Draw an atom in blender
         """
-        bpy.ops.mesh.primitive_uv_sphere_add(segments=64, ring_count=32, size=0.2, view_align=False,
-                                             enter_editmode=False, location=(atom.x, atom.y, atom.z))
+        if atom.type == 'C' or atom.type == 'O':
+            bpy.ops.mesh.primitive_uv_sphere_add(segments=64, ring_count=32, size=0.4, view_align=False,
+                                                 enter_editmode=False, location=(atom.x, atom.y, atom.z))
+        else:
+            bpy.ops.mesh.primitive_uv_sphere_add(segments=64, ring_count=32, size=0.2, view_align=False,
+                                                 enter_editmode=False, location=(atom.x, atom.y, atom.z))
         bpy.ops.object.shade_smooth()
         obj = bpy.context.selected_objects[0]
         obj.name = atom.name
@@ -177,15 +185,41 @@ class Drawer:
 
         curve = ob.data
         curve.dimensions = '3D'
-        curve.bevel_depth = 0.020
-        curve.bevel_resolution = 10
+        curve.bevel_depth = 0.1
+        curve.bevel_resolution = 32
         curve.fill_mode = 'FULL'
+
+        ob.name = bond.name
 
         scene.objects.link(ob)
 
         # Convert everything to a mesh
         bpy.ops.object.select_all(action='SELECT')
         bpy.ops.object.convert(target='MESH')
+
+    def add_bone(self, bond):
+        context = bpy.context
+        scene = context.scene
+        curve_obj = context.object
+        curve = curve_obj.data
+
+        atom_1 = bond.atoms[0]
+        atom_2 = bond.atoms[1]
+
+        arm = bpy.data.armatures.new('{}_arm'.format(bond.name))
+        arm_obj = bpy.data.objects.new('{}_arm'.format(bond.name), arm)
+        scene.objects.link(arm_obj)
+        # arm_obj.location = Vector((atom_1.x, atom_1.y, atom_1.z))
+
+        bpy.context.scene.objects.active = arm_obj
+
+        bpy.ops.object.mode_set(mode='EDIT')
+
+        bone = arm.edit_bones.new('Bone')
+        bone.head = Vector((atom_1.x, atom_1.y, atom_1.z))
+        bone.tail = Vector((atom_2.x, atom_2.y, atom_2.z))
+
+        bpy.ops.object.mode_set(mode='OBJECT')
 
     def compute_translation_rotation_bonds(self, old_bond, new_bond):
         # Translation
@@ -315,7 +349,8 @@ class Drawer:
             orig_rot_mat = orig_rot.to_matrix().to_4x4()
             orig_scale_mat = Matrix.Scale(orig_scale[0], 4, (1, 0, 0)) * Matrix.Scale(orig_scale[1], 4, (0, 1, 0))
 
-            bpy.data.objects[bond.name].matrix_world = orig_loc_mat * matrix_rotation_new * orig_rot_mat * orig_scale_mat
+            bpy.data.objects[
+                bond.name].matrix_world = orig_loc_mat * matrix_rotation_new * orig_rot_mat * orig_scale_mat
 
             bpy.data.objects[bond.name].location += translation
 
