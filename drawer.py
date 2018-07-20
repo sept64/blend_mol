@@ -55,7 +55,7 @@ class Drawer:
 
         # Draw cis molecules
         self.draw(self.__mol.get_state_by_name('cis'))
-
+        return 0
         self.save_keys('')
 
         # Animate 
@@ -87,8 +87,30 @@ class Drawer:
         scene.objects.link(arm_obj)
 
         # Add bones to animate correctly the molecule
-        for bond in state.bonds:
-            self.add_bone(bond, arm_obj, arm)
+        # Init bones adding
+        first_bond = self.__mol.get_state_by_name('cis').bonds[0]
+        self.add_bone(first_bond, arm_obj, arm)
+        self.do_bone_starting_with(first_bond.atoms[1])
+        self.do_bone_starting_with(first_bond.atoms[0])
+
+    def do_bone_starting_with(self, head):
+        # Propagate throw all the "heads" of the bones
+        for b in self.__mol.get_state_by_name('cis').bonds:
+            if b.atoms[0].name == head.name:
+                self.extrude_bone(b)
+                self.do_bone_starting_with(b.atoms[1])
+
+    # def do_bone_ending_with(self, tail):
+    #     # Propagate throw all the "tails" of the bones
+    #     for b in self.__mol.get_state_by_name('cis').bonds:
+    #         if b.atoms[1].name == tail.name:
+    #             self.extrude_bone(b)
+    #             self.do_bone_ending_with(b.atoms[0])
+
+
+
+    def extrude_bone(self, bond):
+        print(bond.name)
 
     def move(self, index_start, index_end):
 
@@ -206,6 +228,8 @@ class Drawer:
         bpy.ops.object.convert(target='MESH')
 
     def add_bone(self, bond, arm_obj, arm):
+        atom_1 = bond.atoms[0]
+        atom_2 = bond.atoms[1]
 
         bpy.context.scene.objects.active = arm_obj
 
@@ -226,13 +250,13 @@ class Drawer:
         # Parent the bone with meshes bond and atom
         scn = bpy.context.scene
 
-        obj_atom_1 = scn.objects[bond.atoms[0].name]
+        # obj_atom_1 = scn.objects[bond.atoms[0].name]
         obj_atom_2 = scn.objects[bond.atoms[1].name]
         obj_bond = scn.objects[bond.name]
-        armature = scn.objects['{}_arm'.format(bond.name)]
-        arm_bones = armature.data.bones #bpy.data.armatures[armature.name].bones
+        armature = scn.objects['Armature']
+        arm_bones = armature.data.bones  # bpy.data.armatures[armature.name].bones
 
-        obj_atom_1.select = True
+        # obj_atom_1.select = True
         obj_atom_2.select = True
         obj_bond.select = True
         armature.select = True
