@@ -78,9 +78,17 @@ class Drawer:
         for bond in state.bonds:
             self.add_bond(bond)
 
+        # Add armature
+        context = bpy.context
+        scene = context.scene
+
+        arm = bpy.data.armatures.new('Armature')
+        arm_obj = bpy.data.objects.new('Armature', arm)
+        scene.objects.link(arm_obj)
+
         # Add bones to animate correctly the molecule
         for bond in state.bonds:
-            self.add_bone(bond)
+            self.add_bone(bond, arm_obj, arm)
 
     def move(self, index_start, index_end):
 
@@ -197,19 +205,7 @@ class Drawer:
         bpy.ops.object.select_all(action='SELECT')
         bpy.ops.object.convert(target='MESH')
 
-    def add_bone(self, bond):
-        context = bpy.context
-        scene = context.scene
-        curve_obj = context.object
-        # curve = curve_obj.data
-
-        atom_1 = bond.atoms[0]
-        atom_2 = bond.atoms[1]
-
-        arm = bpy.data.armatures.new('{}_arm'.format(bond.name))
-        arm_obj = bpy.data.objects.new('{}_arm'.format(bond.name), arm)
-        scene.objects.link(arm_obj)
-        # arm_obj.location = Vector((atom_1.x, atom_1.y, atom_1.z))
+    def add_bone(self, bond, arm_obj, arm):
 
         bpy.context.scene.objects.active = arm_obj
 
@@ -226,6 +222,25 @@ class Drawer:
         bpy.ops.object.select_all(action='DESELECT')
         arm_obj.select = True
         bpy.ops.object.origin_set(type='ORIGIN_CURSOR', center='BOUNDS')
+
+        # Parent the bone with meshes bond and atom
+        scn = bpy.context.scene
+
+        obj_atom_1 = scn.objects[bond.atoms[0].name]
+        obj_atom_2 = scn.objects[bond.atoms[1].name]
+        obj_bond = scn.objects[bond.name]
+        armature = scn.objects['{}_arm'.format(bond.name)]
+        arm_bones = armature.data.bones #bpy.data.armatures[armature.name].bones
+
+        obj_atom_1.select = True
+        obj_atom_2.select = True
+        obj_bond.select = True
+        armature.select = True
+        scn.objects.active = armature
+
+        arm_bones.active = arm_bones['Bone']
+
+        bpy.ops.object.parent_set(type='BONE_RELATIVE')
 
     def compute_translation_rotation_bonds(self, old_bond, new_bond):
         # Translation
