@@ -201,7 +201,7 @@ class Drawer:
         context = bpy.context
         scene = context.scene
         curve_obj = context.object
-        curve = curve_obj.data
+        # curve = curve_obj.data
 
         atom_1 = bond.atoms[0]
         atom_2 = bond.atoms[1]
@@ -221,6 +221,12 @@ class Drawer:
 
         bpy.ops.object.mode_set(mode='OBJECT')
 
+        # Snap origin to center of the object
+        bpy.context.scene.cursor_location = Vector((atom_1.x, atom_1.y, atom_1.z))
+        bpy.ops.object.select_all(action='DESELECT')
+        arm_obj.select = True
+        bpy.ops.object.origin_set(type='ORIGIN_CURSOR', center='BOUNDS')
+
     def compute_translation_rotation_bonds(self, old_bond, new_bond):
         # Translation
         v_old_atom_0, v_old_atom_1 = Vector([old_bond.atoms[0].x, old_bond.atoms[0].y, old_bond.atoms[0].z]), Vector(
@@ -239,14 +245,14 @@ class Drawer:
         new_bond_vec = Vector([new_bond.atoms[1].x - new_bond.atoms[0].x, new_bond.atoms[1].y - new_bond.atoms[0].y,
                                new_bond.atoms[1].z - new_bond.atoms[0].z])
 
-        print('OldBond 0 = [{}, {}, {}], 1 = [{}, {}, {}]'.format(old_bond.atoms[0].x, old_bond.atoms[0].y,
-                                                                  old_bond.atoms[0].z,
-                                                                  old_bond.atoms[1].x, old_bond.atoms[1].y,
-                                                                  old_bond.atoms[1].z))
-        print('NewBond 0 = [{}, {}, {}], 1 = [{}, {}, {}]'.format(new_bond.atoms[0].x, new_bond.atoms[0].y,
-                                                                  new_bond.atoms[0].z,
-                                                                  new_bond.atoms[1].x, new_bond.atoms[1].y,
-                                                                  new_bond.atoms[1].z))
+        # print('OldBond 0 = [{}, {}, {}], 1 = [{}, {}, {}]'.format(old_bond.atoms[0].x, old_bond.atoms[0].y,
+        #                                                           old_bond.atoms[0].z,
+        #                                                           old_bond.atoms[1].x, old_bond.atoms[1].y,
+        #                                                           old_bond.atoms[1].z))
+        # print('NewBond 0 = [{}, {}, {}], 1 = [{}, {}, {}]'.format(new_bond.atoms[0].x, new_bond.atoms[0].y,
+        #                                                           new_bond.atoms[0].z,
+        #                                                           new_bond.atoms[1].x, new_bond.atoms[1].y,
+        #                                                           new_bond.atoms[1].z))
 
         rotation = old_bond_vec.rotation_difference(new_bond_vec).to_euler()
         return translation, rotation
