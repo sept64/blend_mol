@@ -89,28 +89,40 @@ class Drawer:
         # Add bones to animate correctly the molecule
         # Init bones adding
         first_bond = self.__mol.get_state_by_name('cis').bonds[0]
+        done_bonds = [first_bond]
         self.add_bone(first_bond, arm_obj, arm)
-        self.do_bone_starting_with(first_bond.atoms[1])
-        self.do_bone_starting_with(first_bond.atoms[0])
+        self.do_bone_starting_with(first_bond, first_bond.atoms[1], done_bonds)
+        # self.do_bone_starting_with(first_bond, first_bond.atoms[0])
 
-    def do_bone_starting_with(self, head):
+    def do_bone_starting_with(self, old_bond, head, already_done):
         # Propagate throw all the "heads" of the bones
+        print('Do bone starting with : {} {} {}'.format(old_bond.name, head.name, [o.name for o in already_done]))
         for b in self.__mol.get_state_by_name('cis').bonds:
-            if b.atoms[0].name == head.name:
-                self.extrude_bone(b)
-                self.do_bone_starting_with(b.atoms[1])
+            if not b in already_done and b.atoms[0].name == head.name:
+                    self.extrude_bone(old_bond, b)
+                    already_done.append(b)
+                    self.do_bone_starting_with(b, b.atoms[1], already_done)
 
-    # def do_bone_ending_with(self, tail):
-    #     # Propagate throw all the "tails" of the bones
-    #     for b in self.__mol.get_state_by_name('cis').bonds:
-    #         if b.atoms[1].name == tail.name:
-    #             self.extrude_bone(b)
-    #             self.do_bone_ending_with(b.atoms[0])
+    def extrude_bone(self, old_bond, bond):
+        print('Extrude with : {} {}'.format(old_bond.name, bond.name))
+        ob = bpy.data.objects['Armature']
+        arm = ob.data
 
+        bpy.ops.object.mode_set(mode='EDIT')
+        # print(bond.name)
+        if old_bond.atoms[0].name == bond.atoms[0].name:
+            bone = arm.edit_bones.new(bond.name)
+            bone.parent = arm.edit_bones[old_bond.name]
 
+            bone.tail = Vector((bond.atoms[1].x, bond.atoms[1].y, bond.atoms[1].z))
+        else:
+            # TODO : active/select whatever the good bone to extrude
+            bpy.ops.armature.extrude()
+            bone = arm.edit_bones[old_bond.name + '.001']
+            bone.name = bond.name
+            bone.tail = Vector((bond.atoms[1].x, bond.atoms[1].y, bond.atoms[1].z))
 
-    def extrude_bone(self, bond):
-        print(bond.name)
+        bpy.ops.object.mode_set(mode='OBJECT')
 
     def move(self, index_start, index_end):
 
@@ -235,7 +247,7 @@ class Drawer:
 
         bpy.ops.object.mode_set(mode='EDIT')
 
-        bone = arm.edit_bones.new('Bone')
+        bone = arm.edit_bones.new(bond.name)
         bone.head = Vector((atom_1.x, atom_1.y, atom_1.z))
         bone.tail = Vector((atom_2.x, atom_2.y, atom_2.z))
 
@@ -262,7 +274,7 @@ class Drawer:
         armature.select = True
         scn.objects.active = armature
 
-        arm_bones.active = arm_bones['Bone']
+        arm_bones.active = arm_bones[bond.name]
 
         bpy.ops.object.parent_set(type='BONE_RELATIVE')
 
