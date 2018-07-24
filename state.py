@@ -26,6 +26,9 @@ class State:
         self.__atoms = []  # list of atoms
         self.__bonds = []  # list of links between atoms
         self.__number = TYPES.index(type)
+        self.__it_atom = None
+        self.__it_done_bonds = []
+        self.__it_done_atoms = []
 
     def __get_atom_by_number(self, number):
         for a in self.__atoms:
@@ -60,6 +63,103 @@ class State:
     bonds = property(get_bonds)
     number = property(get_number)
     type = property(get_type)
+
+    def iterate_bonds(self):
+        """
+        Iterate on the state bonds, used to build the rigged bones structure (cis state)
+        :return: next bond
+        """
+        if self.__it_atom:
+            # Go get all the bonds involving current atom
+            tmp_bonds = []
+            for b in self.__bonds:
+                if self.__it_atom.name in b.name:
+                    tmp_bonds.append(b)
+
+            # Check if anyone is not done yet
+            bonds_to_do = list(set(tmp_bonds) - set(self.__it_done_bonds))
+            if len(bonds_to_do) != 0:
+                print([o.name for o in bonds_to_do])
+                # Check first if there is an undone bond linking our current atom to an H atom
+                for b in bonds_to_do:
+                    if 'H' in [o for o in b.name.split('_') if o != self.__it_atom.name][0]:
+                        if b.name.split('_').index(self.__it_atom.name) == 1:
+                            b.revert_name_and_atoms()
+                        self.__it_done_bonds.append(b)
+                        return self.__it_done_bonds[-1]
+                # Then check if there is an undone  bond linking our current atom to an O atom
+                for b in bonds_to_do:
+                    if 'O' in [o for o in b.name.split('_') if o != self.__it_atom.name][0]:
+                        if b.name.split('_').index(self.__it_atom.name) == 1:
+                            b.revert_name_and_atoms()
+                        self.__it_done_bonds.append(b)
+                        return self.__it_done_bonds[-1]
+                # Finally check if there is an undone bond linking our current atom to an C atom
+                for b in bonds_to_do:
+                    if 'C' in [o for o in b.name.split('_') if o != self.__it_atom.name][0]:
+                        if b.name.split('_').index(self.__it_atom.name) == 1:
+                            b.revert_name_and_atoms()
+                        self.__it_done_bonds.append(b)
+                        return self.__it_done_bonds[-1]
+
+            else: # We've done every bond of the present atom
+                last_bond_done = self.__it_done_bonds[-1]
+                other_atom_name = [o for o in last_bond_done.name.split('_') if o != self.__it_atom.name][0]
+                # if b.name.split('_').index(self.__it_atom.name) == 1:
+                #     b.revert_name_and_atoms()
+                self.__it_atom = self.get_atom_by_name(other_atom_name)
+                if self.__it_atom in self.__it_done_atoms:
+                    # We finished to iterate : reinitialise everything
+                    self.__it_atom = None
+                    self.__it_done_bonds = []
+                    self.__it_done_atoms = []
+                    return None
+                else:
+                    # Go get all the bonds involving current atom
+                    tmp_bonds = []
+                    for b in self.__bonds:
+                        if self.__it_atom.name in b.name:
+                            tmp_bonds.append(b)
+
+                    # Check if anyone is not done yet
+                    bonds_to_do = list(set(tmp_bonds) - set(self.__it_done_bonds))
+                    if len(bonds_to_do) != 0:
+                        # Check first if there is an undone bond linking our current atom to an H atom
+                        for b in bonds_to_do:
+                            if 'H' in [o for o in b.name.split('_') if o != self.__it_atom.name][0]:
+                                if b.name.split('_').index(self.__it_atom.name) == 1:
+                                    b.revert_name_and_atoms()
+                                self.__it_done_bonds.append(b)
+                                return self.__it_done_bonds[-1]
+                        # Then check if there is an undone  bond linking our current atom to an O atom
+                        for b in bonds_to_do:
+                            if 'O' in [o for o in b.name.split('_') if o != self.__it_atom.name][0]:
+                                if b.name.split('_').index(self.__it_atom.name) == 1:
+                                    b.revert_name_and_atoms()
+                                self.__it_done_bonds.append(b)
+                                return self.__it_done_bonds[-1]
+                        # Finally check if there is an undone bond linking our current atom to an C atom
+                        for b in bonds_to_do:
+                            if 'C' in [o for o in b.name.split('_') if o != self.__it_atom.name][0]:
+                                if b.name.split('_').index(self.__it_atom.name) == 1:
+                                    b.revert_name_and_atoms()
+                                self.__it_done_bonds.append(b)
+                                return self.__it_done_bonds[-1]
+                    else:
+                        return None
+        else:  # First time
+            for a in self.__atoms:
+                if a.name == 'H50':  # TODO : find a best solution than this hardcoded one
+                    for b in self.__bonds:
+                        if 'H50' in b.name:
+                            self.__it_atom = self.get_atom_by_name('H50')
+                            if b.name.split('_').index(self.__it_atom.name) == 1:
+                                b.revert_name_and_atoms()
+                            self.__it_done_bonds.append(b)
+                            self.__it_done_atoms = []
+                            break
+
+        return self.__it_done_bonds[-1]
 
     def read(self):
         """
@@ -104,6 +204,7 @@ class State:
             atom = Atom()
             tmp = a.split('    ')
             atom.number, atom.name = tmp[0].split(' ')
+
             if len(tmp[-1].split(' ')) == 3:
                 atom.z, atom.type = tmp[-1].split(' ')[1:3]
             else:
@@ -111,6 +212,8 @@ class State:
             atom.z = float(atom.z)
             atom.x = float(tmp[1])
             atom.y = float(tmp[2])
+            if int(atom.number) <= 9:
+                atom.name = '{}0{}'.format(atom.type, atom.number)
             self.__atoms.append(atom)
 
         # Bonds

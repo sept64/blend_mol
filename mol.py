@@ -43,3 +43,14 @@ class Mol:
         """
         for state in self.__states:
             state.read()
+
+    def iterate_bonds(self, state):
+        """
+        Iterate on a given state bonds, used to build the rigged bones structure (cis state)
+        :return: next bond
+        """
+        try:
+            assert (str(state).strip() in TYPES)
+        except:
+            print('**Error: bad type given in mol::get_states : {}'.format(state))
+        return self.__states[TYPES.index(str(state).strip())].iterate_bonds()

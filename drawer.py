@@ -88,7 +88,16 @@ class Drawer:
 
         # Add bones to animate correctly the molecule
         # Init bones adding
-        first_bond = self.__mol.get_state_by_name('cis').bonds[0]
+        bond_to_draw = self.__mol.iterate_bonds('cis')
+        self.add_bone(bond_to_draw, arm_obj, arm)
+        cmpt = len(self.__mol.get_state_by_name('cis').bonds)
+        while cmpt !=0:
+            old_bond = bond_to_draw
+            bond_to_draw = self.__mol.iterate_bonds('cis')
+            if bond_to_draw:
+                self.extrude_bone(old_bond, bond_to_draw)
+            cmpt -= 1
+        """
         done_bonds = [first_bond]
         self.add_bone(first_bond, arm_obj, arm)
         self.do_bone_starting_with(first_bond, first_bond.atoms[1], done_bonds)
@@ -98,7 +107,7 @@ class Drawer:
             print('We\'ve done {} bones yet, but {} are still to do !'.format(len(done_bonds), len(
                 self.__mol.get_state_by_name('cis').bonds) - len(done_bonds)))
             bonds_to_do = list(set(self.__mol.get_state_by_name('cis').bonds) - set(done_bonds))
-            print('Bones left : {}'.format(bonds_to_do))
+            print('Bones left : {}'.format([o.name for o in bonds_to_do]))
 
             first_bond = bonds_to_do[0]
             done_bonds.append(first_bond)
@@ -107,17 +116,16 @@ class Drawer:
             self.do_bone_starting_with(first_bond, first_bond.atoms[1], done_bonds)
             self.do_bone_starting_with(first_bond, first_bond.atoms[0], done_bonds)
 
-
-
+        """
 
     def do_bone_starting_with(self, old_bond, head, already_done):
         # Propagate throw all the "heads" of the bones
         print('Do bone starting with : {} {} {}'.format(old_bond.name, head.name, [o.name for o in already_done]))
         for b in self.__mol.get_state_by_name('cis').bonds:
             if not b in already_done and b.atoms[0].name == head.name:
-                    self.extrude_bone(old_bond, b)
-                    already_done.append(b)
-                    self.do_bone_starting_with(b, b.atoms[1], already_done)
+                self.extrude_bone(old_bond, b)
+                already_done.append(b)
+                self.do_bone_starting_with(b, b.atoms[1], already_done)
 
     def extrude_bone(self, old_bond, bond):
         print('Extrude with : {} {}'.format(old_bond.name, bond.name))
@@ -127,8 +135,14 @@ class Drawer:
         bpy.ops.object.mode_set(mode='EDIT')
 
         if old_bond.atoms[0].name == bond.atoms[0].name:
-            bone = arm.edit_bones.new(bond.name)
-            bone.parent = arm.edit_bones[old_bond.name]
+            # bone = arm.edit_bones.new(bond.name)
+            # bone.parent = arm.edit_bones[old_bond.name]
+            bpy.ops.armature.select_all(action='DESELECT')
+            # Active/select whatever the good bone to extrude
+            bpy.data.armatures['Armature_mol'].edit_bones[old_bond.name].select_head = True
+            bpy.ops.armature.extrude()
+            bone = arm.edit_bones[old_bond.name + '.001']
+            bone.name = bond.name
 
         else:
             # Deselect everything first
@@ -155,7 +169,10 @@ class Drawer:
 
         # obj_atom_1 = scn.objects[bond.atoms[0].name]
         obj_atom_2 = scn.objects[bond.atoms[1].name]
-        obj_bond = scn.objects[bond.name]
+        try:
+            obj_bond = scn.objects[bond.name]
+        except:
+            obj_bond = scn.objects['{}_{}'.format(bond.atoms[1].name, bond.atoms[0].name)]
         armature = scn.objects['Armature']
         arm_bones = armature.data.bones  # bpy.data.armatures[armature.name].bones
 
@@ -309,7 +326,10 @@ class Drawer:
 
         # obj_atom_1 = scn.objects[bond.atoms[0].name]
         obj_atom_2 = scn.objects[bond.atoms[1].name]
-        obj_bond = scn.objects[bond.name]
+        try:
+            obj_bond = scn.objects[bond.name]
+        except:
+            obj_bond = scn.objects['{}_{}'.format(bond.atoms[1].name, bond.atoms[0].name)]
         armature = scn.objects['Armature']
         arm_bones = armature.data.bones  # bpy.data.armatures[armature.name].bones
 
@@ -445,16 +465,21 @@ class Drawer:
             translation, euler_xyz = self.compute_translation_rotation_bonds(old_bond, bond)
             # Convert euler angles into matrix rotation
             matrix_rotation_new = euler_xyz.to_matrix().to_4x4()
-
-            orig_loc, orig_rot, orig_scale = bpy.data.objects[bond.name].matrix_world.decompose()
+            try:
+                orig_loc, orig_rot, orig_scale = bpy.data.objects[bond.name].matrix_world.decompose()
+            except:
+                orig_loc, orig_rot, orig_scale = bpy.data.objects[
+                    '{}_{}'.format(bond.atoms[1].name, bond.atoms[0].name)].matrix_world.decompose()
             orig_loc_mat = Matrix.Translation(orig_loc)
             orig_rot_mat = orig_rot.to_matrix().to_4x4()
             orig_scale_mat = Matrix.Scale(orig_scale[0], 4, (1, 0, 0)) * Matrix.Scale(orig_scale[1], 4, (0, 1, 0))
 
             bpy.data.objects[
                 bond.name].matrix_world = orig_loc_mat * matrix_rotation_new * orig_rot_mat * orig_scale_mat
-
-            bpy.data.objects[bond.name].location += translation
+            try:
+                bpy.data.objects[bond.name].location += translation
+            except:
+                bpy.data.objects['{}_{}'.format(bond.atoms[1].name, bond.atoms[0].name)].location += translation
 
             self.save_keys(bond.name)
             # print('Fade in of {}'.format(bond.name))

@@ -32,8 +32,9 @@ class Bond:
     def get_name(self):
         return self.__name
 
-    def reset_name(self):
-        self.__name = '{}_{}'.format(self.__atoms[0].name, self.__atoms[1].name)
+    def revert_name_and_atoms(self):
+        self.__name = '{}_{}'.format(self.__atoms[1].name, self.__atoms[0].name)
+        self.__atoms = [self.__atoms[1], self.__atoms[0]]
 
     order = property(get_order, set_order)
     atoms = property(get_atoms, set_atoms)
