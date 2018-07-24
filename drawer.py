@@ -82,7 +82,7 @@ class Drawer:
         context = bpy.context
         scene = context.scene
 
-        arm = bpy.data.armatures.new('Armature')
+        arm = bpy.data.armatures.new('Armature_mol')
         arm_obj = bpy.data.objects.new('Armature', arm)
         scene.objects.link(arm_obj)
 
@@ -92,7 +92,7 @@ class Drawer:
         done_bonds = [first_bond]
         self.add_bone(first_bond, arm_obj, arm)
         self.do_bone_starting_with(first_bond, first_bond.atoms[1], done_bonds)
-        # self.do_bone_starting_with(first_bond, first_bond.atoms[0])
+        # self.do_bone_starting_with(first_bond, first_bond.atoms[0], done_bonds)
 
     def do_bone_starting_with(self, old_bond, head, already_done):
         # Propagate throw all the "heads" of the bones
@@ -105,23 +105,30 @@ class Drawer:
 
     def extrude_bone(self, old_bond, bond):
         print('Extrude with : {} {}'.format(old_bond.name, bond.name))
-        ob = bpy.data.objects['Armature']
-        arm = ob.data
+        arm = bpy.data.armatures['Armature_mol']
+        # arm = ob.data
 
         bpy.ops.object.mode_set(mode='EDIT')
-        # print(bond.name)
+
         if old_bond.atoms[0].name == bond.atoms[0].name:
             bone = arm.edit_bones.new(bond.name)
             bone.parent = arm.edit_bones[old_bond.name]
 
-            bone.tail = Vector((bond.atoms[1].x, bond.atoms[1].y, bond.atoms[1].z))
         else:
-            # TODO : active/select whatever the good bone to extrude
+            # Deselect everything first
+            bpy.ops.armature.select_all(action='DESELECT')
+            # Active/select whatever the good bone to extrude
+            bpy.data.armatures['Armature_mol'].edit_bones[old_bond.name].select_tail = True
             bpy.ops.armature.extrude()
             bone = arm.edit_bones[old_bond.name + '.001']
             bone.name = bond.name
-            bone.tail = Vector((bond.atoms[1].x, bond.atoms[1].y, bond.atoms[1].z))
 
+        bpy.ops.armature.select_all(action='DESELECT')
+        # Set the tail of the new bone
+        bpy.data.armatures['Armature_mol'].edit_bones[bond.name].select_tail = True
+        bpy.context.scene.cursor_location = Vector((bond.atoms[1].x, bond.atoms[1].y, bond.atoms[1].z))
+        bpy.ops.view3d.snap_selected_to_cursor()
+        # bone.tail.xyz = bpy.context.scene.cursor_location
         bpy.ops.object.mode_set(mode='OBJECT')
 
     def move(self, index_start, index_end):
