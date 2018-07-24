@@ -92,7 +92,23 @@ class Drawer:
         done_bonds = [first_bond]
         self.add_bone(first_bond, arm_obj, arm)
         self.do_bone_starting_with(first_bond, first_bond.atoms[1], done_bonds)
-        # self.do_bone_starting_with(first_bond, first_bond.atoms[0], done_bonds)
+        self.do_bone_starting_with(first_bond, first_bond.atoms[0], done_bonds)
+
+        if len(self.__mol.get_state_by_name('cis').bonds) > len(done_bonds):
+            print('We\'ve done {} bones yet, but {} are still to do !'.format(len(done_bonds), len(
+                self.__mol.get_state_by_name('cis').bonds) - len(done_bonds)))
+            bonds_to_do = list(set(self.__mol.get_state_by_name('cis').bonds) - set(done_bonds))
+            print('Bones left : {}'.format(bonds_to_do))
+
+            first_bond = bonds_to_do[0]
+            done_bonds.append(first_bond)
+            self.add_bone(first_bond, arm_obj, arm)
+
+            self.do_bone_starting_with(first_bond, first_bond.atoms[1], done_bonds)
+            self.do_bone_starting_with(first_bond, first_bond.atoms[0], done_bonds)
+
+
+
 
     def do_bone_starting_with(self, old_bond, head, already_done):
         # Propagate throw all the "heads" of the bones
@@ -129,7 +145,29 @@ class Drawer:
         bpy.context.scene.cursor_location = Vector((bond.atoms[1].x, bond.atoms[1].y, bond.atoms[1].z))
         bpy.ops.view3d.snap_selected_to_cursor()
         # bone.tail.xyz = bpy.context.scene.cursor_location
+        bpy.ops.armature.select_all(action='DESELECT')
+
         bpy.ops.object.mode_set(mode='OBJECT')
+        bpy.ops.object.select_all(action='DESELECT')
+
+        # Parent the bone with meshes bond and atom
+        scn = bpy.context.scene
+
+        # obj_atom_1 = scn.objects[bond.atoms[0].name]
+        obj_atom_2 = scn.objects[bond.atoms[1].name]
+        obj_bond = scn.objects[bond.name]
+        armature = scn.objects['Armature']
+        arm_bones = armature.data.bones  # bpy.data.armatures[armature.name].bones
+
+        # obj_atom_1.select = True
+        obj_atom_2.select = True
+        obj_bond.select = True
+        armature.select = True
+        scn.objects.active = armature
+
+        arm_bones.active = arm_bones[bond.name]
+
+        bpy.ops.object.parent_set(type='BONE_RELATIVE')
 
     def move(self, index_start, index_end):
 
