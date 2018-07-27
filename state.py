@@ -26,9 +26,12 @@ class State:
         self.__atoms = []  # list of atoms
         self.__bonds = []  # list of links between atoms
         self.__number = TYPES.index(type)
+
         self.__it_atom = None
         self.__it_done_bonds = []
         self.__it_done_atoms = []
+        self.__it_was_done_one_time = False
+        self.__index_iteration = 0
 
     def __get_atom_by_number(self, number):
         for a in self.__atoms:
@@ -69,7 +72,7 @@ class State:
         Iterate on the state bonds, used to build the rigged bones structure (cis state)
         :return: next bond
         """
-        if self.__it_atom:
+        if self.__it_atom and not self.__it_was_done_one_time:
             # Go get all the bonds involving current atom
             tmp_bonds = []
             for b in self.__bonds:
@@ -102,17 +105,16 @@ class State:
                         self.__it_done_bonds.append(b)
                         return self.__it_done_bonds[-1]
 
-            else: # We've done every bond of the present atom
+            else:  # We've done every bond of the present atom
                 last_bond_done = self.__it_done_bonds[-1]
                 other_atom_name = [o for o in last_bond_done.name.split('_') if o != self.__it_atom.name][0]
                 # if b.name.split('_').index(self.__it_atom.name) == 1:
                 #     b.revert_name_and_atoms()
                 self.__it_atom = self.get_atom_by_name(other_atom_name)
                 if self.__it_atom in self.__it_done_atoms:
-                    # We finished to iterate : reinitialise everything
-                    self.__it_atom = None
-                    self.__it_done_bonds = []
-                    self.__it_done_atoms = []
+                    # We finished our first iteration, all bonds and atoms are kept in memory to accelerate other
+                    # iterations
+                    self.__it_was_done_one_time = True
                     return None
                 else:
                     # Go get all the bonds involving current atom
@@ -147,7 +149,7 @@ class State:
                                 return self.__it_done_bonds[-1]
                     else:
                         return None
-        else:  # First time
+        elif not self.__it_was_done_one_time:  # First time
             for a in self.__atoms:
                 if a.name == 'H50':  # TODO : find a best solution than this hardcoded one
                     for b in self.__bonds:
@@ -158,6 +160,16 @@ class State:
                             self.__it_done_bonds.append(b)
                             self.__it_done_atoms = []
                             break
+
+        else:
+            if self.__index_iteration < len(self.__it_done_bonds[self.__index_iteration]):
+                bond = self.__it_done_bonds[self.__index_iteration]
+                self.__index_iteration += 1
+                return bond
+            else:
+                # Iteration finished
+                self.__index_iteration = 0
+                return None
 
         return self.__it_done_bonds[-1]
 

@@ -55,7 +55,7 @@ class Drawer:
 
         # Draw cis molecules
         self.draw(self.__mol.get_state_by_name('cis'))
-        return 0
+
         self.save_keys('')
 
         # Animate 
@@ -70,6 +70,49 @@ class Drawer:
             i += 1
             frame += PAS
         bpy.context.scene.frame_set(BEGIN)
+
+    def move(self, index_start, index_end):
+        state_1 = self.__mol.states[index_start]
+        state_2 = self.__mol.states[index_end]
+        print('Computing move between state {} and state {}'.format(state_1.type, state_2.type))
+
+        bpy.ops.object.select_all(action='DESELECT')
+        bpy.ops.object.mode_set(mode='POSE')
+
+        # Select the good bone and start the iteration loop to move all of it
+        bond = self.__mol.iterate_bonds('cis')
+        arm = bpy.data.armatures['Armature_mol']
+        while bond:
+            bone = arm.bones[bond.name]
+            bone.select = True
+
+            old_bonds_str = [bond.name for bond in state_1.bonds]
+            new_bonds_str = [bond.name for bond in state_2.bonds]
+
+            to_move = set(new_bonds_str).intersection(old_bonds_str)
+
+            # Move the bond that exists
+            for o in to_move:
+                new_bond = state_2.get_bond_by_name(o)
+                old_bond = state_1.get_bond_by_name(o)
+                # Compute rotation and translation
+                translation, euler_xyz = self.compute_translation_rotation_bonds(old_bond, new_bond)
+                # Convert euler angles into matrix rotation
+                matrix_rotation_new = euler_xyz.to_matrix().to_4x4()
+
+                orig_loc, orig_rot, orig_scale = bone.matrix_local.decompose()
+                orig_loc_mat = Matrix.Translation(orig_loc)
+                orig_rot_mat = orig_rot.to_matrix().to_4x4()
+                orig_scale_mat = Matrix.Scale(orig_scale[0], 4, (1, 0, 0)) * Matrix.Scale(orig_scale[1], 4, (0, 1, 0))
+
+                bone.matrix_world = orig_loc_mat * matrix_rotation_new * orig_rot_mat * orig_scale_mat
+
+                bone.location += translation
+
+                self.save_keys(o)
+
+            bond = self.__mol.iterate_bonds('cis')
+        bpy.ops.object.mode_set(mode='OBJECT')
 
     def draw(self, state):
         for atom in state.atoms:
@@ -91,7 +134,7 @@ class Drawer:
         bond_to_draw = self.__mol.iterate_bonds('cis')
         self.add_bone(bond_to_draw, arm_obj, arm)
         cmpt = len(self.__mol.get_state_by_name('cis').bonds)
-        while cmpt !=0:
+        while cmpt != 0:
             old_bond = bond_to_draw
             bond_to_draw = self.__mol.iterate_bonds('cis')
             if bond_to_draw:
@@ -139,7 +182,7 @@ class Drawer:
             # bone.parent = arm.edit_bones[old_bond.name]
             bpy.ops.armature.select_all(action='DESELECT')
             # Active/select whatever the good bone to extrude
-            bpy.data.armatures['Armature_mol'].edit_bones[old_bond.name].select_head = True
+            arm.edit_bones[old_bond.name].select_head = True
             bpy.ops.armature.extrude()
             bone = arm.edit_bones[old_bond.name + '.001']
             bone.name = bond.name
@@ -148,14 +191,14 @@ class Drawer:
             # Deselect everything first
             bpy.ops.armature.select_all(action='DESELECT')
             # Active/select whatever the good bone to extrude
-            bpy.data.armatures['Armature_mol'].edit_bones[old_bond.name].select_tail = True
+            arm.edit_bones[old_bond.name].select_tail = True
             bpy.ops.armature.extrude()
             bone = arm.edit_bones[old_bond.name + '.001']
             bone.name = bond.name
 
         bpy.ops.armature.select_all(action='DESELECT')
         # Set the tail of the new bone
-        bpy.data.armatures['Armature_mol'].edit_bones[bond.name].select_tail = True
+        arm.edit_bones[bond.name].select_tail = True
         bpy.context.scene.cursor_location = Vector((bond.atoms[1].x, bond.atoms[1].y, bond.atoms[1].z))
         bpy.ops.view3d.snap_selected_to_cursor()
         # bone.tail.xyz = bpy.context.scene.cursor_location
@@ -186,7 +229,7 @@ class Drawer:
 
         bpy.ops.object.parent_set(type='BONE_RELATIVE')
 
-    def move(self, index_start, index_end):
+    def __move_atom_and_bond_objects_old(self, index_start, index_end):
 
         state_1 = self.__mol.states[index_start]
         state_2 = self.__mol.states[index_end]
