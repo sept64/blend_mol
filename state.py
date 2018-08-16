@@ -46,9 +46,10 @@ class State:
 
     def get_bond_by_name(self, name):
         for b in self.__bonds:
-            if b.name == name:
+            if b.equals_to(name):
                 return b
-        print('**ERROR: no bond found in state::get_bond_by_name name is : {}'.format(name))
+        print('**ERROR: no bond found in state::get_bond_by_name name is : {}, state is : '.format(name, self.__type))
+        print('**INFO: bonds in this state are : {}'.format([o.name for o in self.__bonds]))
 
     def get_atoms(self):
         return self.__atoms
@@ -108,13 +109,12 @@ class State:
             else:  # We've done every bond of the present atom
                 last_bond_done = self.__it_done_bonds[-1]
                 other_atom_name = [o for o in last_bond_done.name.split('_') if o != self.__it_atom.name][0]
-                # if b.name.split('_').index(self.__it_atom.name) == 1:
-                #     b.revert_name_and_atoms()
                 self.__it_atom = self.get_atom_by_name(other_atom_name)
                 if self.__it_atom in self.__it_done_atoms:
                     # We finished our first iteration, all bonds and atoms are kept in memory to accelerate other
                     # iterations
                     self.__it_was_done_one_time = True
+                    print('None of iteration finished and it was done = true (first time)\n')
                     return None
                 else:
                     # Go get all the bonds involving current atom
@@ -148,6 +148,8 @@ class State:
                                 self.__it_done_bonds.append(b)
                                 return self.__it_done_bonds[-1]
                     else:
+                        print('None of iteration finished and it was done = false\n')
+                        self.__it_was_done_one_time = True
                         return None
         elif not self.__it_was_done_one_time:  # First time
             for a in self.__atoms:
@@ -161,14 +163,15 @@ class State:
                             self.__it_done_atoms = []
                             break
 
-        else:
-            if self.__index_iteration < len(self.__it_done_bonds[self.__index_iteration]):
+        else: # Not the first time, just iterate on __it_done_bonds
+            if self.__index_iteration < len(self.__it_done_bonds):
                 bond = self.__it_done_bonds[self.__index_iteration]
                 self.__index_iteration += 1
                 return bond
             else:
                 # Iteration finished
                 self.__index_iteration = 0
+                print('None of iteration finished and it was done = true\n')
                 return None
 
         return self.__it_done_bonds[-1]
