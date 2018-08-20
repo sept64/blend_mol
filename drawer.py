@@ -52,7 +52,7 @@ class Drawer:
 
         # Draw cis molecules
         self.draw(self.__mol.get_state_by_name('cis'))
-        self.save_keys('')
+        self.save_keys()
 
         # Animate
         frame = PAS
@@ -62,6 +62,7 @@ class Drawer:
             bpy.context.scene.frame_set(frame)
             self.move(i, i + 1)
             bpy.context.scene.frame_set(frame)
+            # self.save_keys()
             i += 1
             frame += PAS
         bpy.context.scene.frame_set(BEGIN)
@@ -76,10 +77,10 @@ class Drawer:
 
         # Select the good bone and start the iteration loop to move all of it
         bond = self.__mol.iterate_bonds('cis')
-        arm = bpy.data.armatures['Armature_mol']
+        arm = bpy.data.objects['Armature']
         while bond:
-            bone = arm.bones[bond.name]
-            bone.select = True
+            bone = arm.pose.bones[bond.name]
+            # bone.select = True
 
             new_bond = state_2.get_bond_by_name(bond.name)
             if new_bond:
@@ -87,15 +88,17 @@ class Drawer:
                 new_bond = state_2.get_bond_by_name(bond.name)
 
             print('New bond : {}'.format(new_bond))
+            old_bone = None
             try:
-                old_bone = arm.bones[bond.name]
+                old_bone = arm.pose.bones[bond.name]
             except:
                 try:
                     bond.revert_name_and_atoms()
-                    old_bone = arm.bones[bond.name]
+                    old_bone = arm.pose.bones[bond.name]
                 except:
                     print('No bone : '.format(bond.name))
             if new_bond and old_bone:
+                """
                 # Compute rotation and translation
                 translation, euler_xyz = self.compute_translation_rotation_bone_bond(old_bone, new_bond)
                 # Convert euler angles into matrix rotation
@@ -109,17 +112,22 @@ class Drawer:
                 bone.matrix_local = orig_loc_mat * matrix_rotation_new * orig_rot_mat * orig_scale_mat
 
                 # bone.location += translation
-
-                self.save_keys(bond.name)
-                bone.select = False
+                """
+                translation, euler_xyz = self.compute_translation_rotation_bone_bond(old_bone, new_bond)
+                bone.rotation_mode = 'XYZ'
+                print('Mon angle est : {}'.format(euler_xyz))
+                bone.rotation_euler = euler_xyz
+                # self.save_keys(bond.name)
+                self.save_keys()
+                # bone.select = False
             bond = self.__mol.iterate_bonds('cis')
         bpy.ops.object.mode_set(mode='OBJECT')
 
     def compute_translation_rotation_bone_bond(self, old_bone, new_bond):
         # Translation
         v_old_atom_0, v_old_atom_1 = Vector(
-            [old_bone.head_local.x, old_bone.head_local.y, old_bone.head_local.z]), Vector(
-            [old_bone.tail_local.x, old_bone.tail_local.y, old_bone.tail_local.z])
+            [old_bone.head.x, old_bone.head.y, old_bone.head.z]), Vector(
+            [old_bone.tail.x, old_bone.tail.y, old_bone.tail.z])
         center_old_bond = (v_old_atom_1 + v_old_atom_0) / 2
 
         v_new_atom_0, v_new_atom_1 = Vector([new_bond.atoms[0].x, new_bond.atoms[0].y, new_bond.atoms[0].z]), Vector(
@@ -130,8 +138,8 @@ class Drawer:
 
         # Rotation
         old_bond_vec = Vector(
-            [old_bone.tail_local.x - old_bone.head_local.x, old_bone.tail_local.y - old_bone.head_local.y,
-             old_bone.tail_local.z - old_bone.head_local.z])
+            [old_bone.tail.x - old_bone.head.x, old_bone.tail.y - old_bone.head.y,
+             old_bone.tail.z - old_bone.head.z])
         new_bond_vec = Vector([new_bond.atoms[1].x - new_bond.atoms[0].x, new_bond.atoms[1].y - new_bond.atoms[0].y,
                                new_bond.atoms[1].z - new_bond.atoms[0].z])
 
@@ -328,14 +336,14 @@ class Drawer:
         ob.matrix_world.translation = o
         return ob
 
-    def save_keys(self, name_bone):
-        if name_bone:
-            bpy.data.objects['Armature'].pose.bones[name_bone].keyframe_insert(data_path='location')
-            bpy.data.objects['Armature'].pose.bones[name_bone].keyframe_insert(data_path='rotation_euler')
-        else:
-            for b in bpy.data.objects['Armature'].pose.bones:
-                b.keyframe_insert(data_path='location')
-                b.keyframe_insert(data_path='rotation_quaternion')
+    def save_keys(self):
+        # if name_bone:
+        #     bpy.data.objects['Armature'].pose.bones[name_bone].keyframe_insert(data_path='location')
+        #     bpy.data.objects['Armature'].pose.bones[name_bone].keyframe_insert(data_path='rotation_euler')
+        # else:
+        for b in bpy.data.objects['Armature'].pose.bones:
+            # b.keyframe_insert(data_path='location')
+            b.keyframe_insert(data_path='rotation_euler')
 
     # def bond_appear(self, bond, state):
     #     # Two possibilities : 1 the bond exists but it's hidden

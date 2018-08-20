@@ -153,10 +153,13 @@ class State:
                         return None
         elif not self.__it_was_done_one_time:  # First time
             for a in self.__atoms:
-                if a.name == 'H50':  # TODO : find a best solution than this hardcoded one
+                # if a.name == 'H50':  # TODO : find a best solution than this hardcoded one
+                if a.name == 'C01':
                     for b in self.__bonds:
-                        if 'H50' in b.name:
-                            self.__it_atom = self.get_atom_by_name('H50')
+                        # if 'H50' in b.name:
+                        if 'C01' in b.name:
+                            # self.__it_atom = self.get_atom_by_name('H50')
+                            self.__it_atom = self.get_atom_by_name('C01')
                             if b.name.split('_').index(self.__it_atom.name) == 1:
                                 b.revert_name_and_atoms()
                             self.__it_done_bonds.append(b)
