@@ -4,7 +4,6 @@
 """
 Class Bond of the blend_mol project, contain all the data corresponding to a link between two atoms
 """
-from blend_mol.atom import Atom
 
 
 class Bond:
@@ -36,11 +35,6 @@ class Bond:
         self.__name = '{}_{}'.format(self.__atoms[1].name, self.__atoms[0].name)
         self.__atoms = [self.__atoms[1], self.__atoms[0]]
 
-    def equals_to(self, name):
-        if name == self.__name or name == '{}_{}'.format(self.__atoms[1].name, self.__atoms[0].name):
-            return True
-        else:
-            return False
     order = property(get_order, set_order)
     atoms = property(get_atoms, set_atoms)
     name = property(get_name)

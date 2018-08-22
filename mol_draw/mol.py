@@ -4,11 +4,7 @@
 """
 Class Mol of the blend_mol project, contain all the data corresponding to a molecule
 """
-from numpy import arange
-from blend_mol.atom import Atom
-from blend_mol.state import State
-
-TYPES = ['cis', 'cis_detach', 'trans_detach', 'trans']
+from mol_draw.state import State
 
 
 class Mol:
@@ -16,6 +12,7 @@ class Mol:
         """
 
         """
+        self.TYPES = ['cis', 'cis_detach', 'trans_detach', 'trans']  # Const types
         self.__states = [State(path, 'cis'), State(path, 'cis_detach'), State(path, 'trans_detach'),
                          State(path, 'trans')]  # Stade can be cis, cis_detach, trans_detach or trans
         self.__path = path  # path where the info of the molecule is stored (files.mol2)
@@ -26,10 +23,10 @@ class Mol:
 
     def get_state_by_name(self, name):
         try:
-            assert (str(name).strip() in TYPES)
+            assert (str(name).strip() in self.TYPES)
         except:
             print('**Error: bad type given in mol::get_states : {}'.format(name))
-        return self.__states[TYPES.index(str(name).strip())]
+        return self.__states[self.TYPES.index(str(name).strip())]
 
     def get_path(self):
         return self.__path
@@ -43,14 +40,3 @@ class Mol:
         """
         for state in self.__states:
             state.read()
-
-    def iterate_bonds(self, state):
-        """
-        Iterate on a given state bonds, used to build the rigged bones structure (cis state)
-        :return: next bond
-        """
-        try:
-            assert (str(state).strip() in TYPES)
-        except:
-            print('**Error: bad type given in mol::get_states : {}'.format(state))
-        return self.__states[TYPES.index(str(state).strip())].iterate_bonds()

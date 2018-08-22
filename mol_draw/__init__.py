@@ -1,15 +1,13 @@
 bl_info = {
-    "name": "Molecule wrapper",
+    "name": "Molecule drawer",
     "category": "Object",
 }
 
 modulesNames = ['main', 'mol', 'state', 'atom', 'bond', 'drawer']
 
 import sys
+
 import importlib
-
-# C:\Users\Titane64\AppData\Roaming\Blender Foundation\Blender\2.79\scripts\addons
-
 
 modulesFullNames = {}
 for currentModuleName in modulesNames:

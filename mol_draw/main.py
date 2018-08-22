@@ -3,18 +3,19 @@
 # -*- coding: utf8 -*-
 
 """
-Main function of the blend_mol project
+Main function of the mol_draw project
 """
 
 import bpy
-from blend_mol.mol import Mol
-from blend_mol.drawer import Drawer
+
+from mol_draw.drawer import Drawer
+from mol_draw.mol import Mol
 
 
-class BlendMol(bpy.types.Operator):
-    """My Object who creates a molecule"""  # Use this as a tooltip for menu items and buttons.
+class MolDraw(bpy.types.Operator):
+    """My Object who draws a molecule"""  # Use this as a tooltip for menu items and buttons.
     bl_idname = "object.mol"  # Unique identifier for buttons and menu items to reference.
-    bl_label = "Mol"  # Display name in the interface.
+    bl_label = "mol_draw"  # Display name in the interface.
     bl_options = {'REGISTER', 'UNDO'}  # Enable undo for the operator.
 
     def execute(self, context):
@@ -25,19 +26,16 @@ class BlendMol(bpy.types.Operator):
 
         # Draw and animate
         drawer = Drawer(mol)
-        drawer.animate()
+        drawer.draw()
 
         return {'FINISHED'}
 
 
 def register():
-    bpy.utils.register_class(BlendMol)
+    bpy.utils.register_class(MolDraw)
     print("Start")
 
 
 def unregister():
-    bpy.utils.unregister_class(BlendMol)
+    bpy.utils.unregister_class(MolDraw)
     print("End")
-
-
-# TODO : dessiner la molécule, la rigger à la main, la faire bouger par script
