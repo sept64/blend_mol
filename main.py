@@ -38,3 +38,6 @@ def register():
 def unregister():
     bpy.utils.unregister_class(BlendMol)
     print("End")
+
+
+# TODO : dessiner la molécule, la rigger à la main, la faire bouger par script

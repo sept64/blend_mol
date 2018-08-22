@@ -230,7 +230,7 @@ class Drawer:
 
         arm_bones.active = arm_bones[bond.name]
 
-        bpy.ops.object.parent_set(type='BONE_RELATIVE')
+        #bpy.ops.object.parent_set(type='BONE_RELATIVE')-
 
     def add_atom(self, atom):
         """
