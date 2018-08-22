@@ -7,7 +7,7 @@ Class State of the blend_mol project, contain all the data corresponding to a st
 from mol_draw.atom import Atom
 from mol_draw.bond import Bond
 
-TYPES = ['cis', 'cis_detach', 'trans_detach', 'trans']
+TYPES = ['cis', 'cdetach', 'tdetach', 'trans']
 
 
 class State:
