@@ -12,9 +12,9 @@ class Mol:
         """
 
         """
-        self.TYPES = ['cis', 'cdetach', 'tdetach', 'trans']  # Const types
+        self.TYPES = ['cis', 'cdetach', 'tdetach', 'trans', 'Hydrogeno_approche', 'Hydrogeno']  # Const types
         self.__states = [State(path, 'cis'), State(path, 'cdetach'), State(path, 'tdetach'),
-                         State(path, 'trans')]  # Stade can be cis, cdetach, tdetach or trans
+                         State(path, 'trans'), State(path, 'Hydrogeno_approche'), State(path, 'Hydrogeno')]
         self.__path = path  # path where the info of the molecule is stored (files.mol2)
 
     # Getter and setter

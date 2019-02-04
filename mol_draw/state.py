@@ -4,10 +4,12 @@
 """
 Class State of the blend_mol project, contain all the data corresponding to a state of the molecule (atom and bond to create, to move and to destroy
 """
+import os
+
 from mol_draw.atom import Atom
 from mol_draw.bond import Bond
 
-TYPES = ['cis', 'cdetach', 'tdetach', 'trans']
+TYPES = ['cis', 'cdetach', 'tdetach', 'trans', 'Hydrogeno_approche', 'Hydrogeno']
 
 
 class State:
@@ -19,8 +21,10 @@ class State:
             assert (str(type) in TYPES)
         except:
             print('**Error: bad type given in state::__init__ : {}'.format(type))
-
-        self.__path = '{}\\{}.mol2'.format(path, type)  # path where the info of the molecule is stored (files.mol2)
+        if os.name == 'nt':
+            self.__path = '{}\\{}.mol2'.format(path, type)  # path where the info of the molecule is stored (files.mol2)
+        else:
+            self.__path = '{}/{}.mol2'.format(path, type)  # path where the info of the molecule is stored (files.mol2)
         self.__type = str(type)
         self.__data = []  # @MOLECULE from file
         self.__atoms = []  # list of atoms
