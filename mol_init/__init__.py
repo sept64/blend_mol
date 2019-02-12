@@ -1,12 +1,12 @@
+import sys
+import importlib
+
 bl_info = {
-    "name": "Molecule drawer",
+    "name": "Init mol scene",
     "category": "Object",
 }
 
-modulesNames = ['main', 'mol', 'state', 'atom', 'bond', 'drawer']
-
-import sys
-import importlib
+modulesNames = ['main', 'lighting_designer', 'background']
 
 modulesFullNames = {}
 for currentModuleName in modulesNames:

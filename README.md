@@ -21,6 +21,13 @@ Dessine n'importe quelle molécule à partir d'un fichier .mol2
 		a) Activation : molécule di-hydrogène s'approche du métal, se coupe et se fixe (en faire que sur 1)
 		b) La molécule cis arrive sur les deux hydrogènes : la double liaison disparaît et l'hydrogène se met sur chaque carbonne ce qui donne la molécule hydrogéno. 
 		c) la molécule se détache et part
+		
+	    Mon programme :
+	        1) init_mol : Initialiser la scène, placer la lumière (et autres éléments statiques)
+	        2) Ajouter le métal
+	        3) Ajouter le di-hydrogène
+	        
+	        2) Dessiner la molécule Cis (ou trans)
 
 	2) Passage cis - trans :
 		
