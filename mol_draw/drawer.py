@@ -21,8 +21,8 @@ class Drawer:
 
     def __init_materials(self):
         # Purge existing materials
-        for tmp_mat in bpy.data.materials:
-            bpy.data.materials.remove(tmp_mat)
+        # for tmp_mat in bpy.data.materials:
+        #     bpy.data.materials.remove(tmp_mat)
 
         self.__materials['C'] = bpy.data.materials.new(name='C_mat')  # set new material to variable
         self.__materials['H'] = bpy.data.materials.new(name='H_mat')  # set new material to variable
