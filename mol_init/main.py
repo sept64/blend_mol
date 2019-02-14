@@ -17,6 +17,11 @@ class MolInit(bpy.types.Operator):
     bl_options = {'REGISTER', 'UNDO'}  # Enable undo for the operator.
 
     def execute(self, context):
+        # Clear everything
+        bpy.ops.object.select_all(action='TOGGLE')
+        bpy.ops.object.select_all(action='TOGGLE')
+        bpy.ops.object.delete(use_global=False)
+
         # Place lights
         l = LightingDesigner()
         l.place_lights()

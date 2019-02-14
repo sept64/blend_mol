@@ -19,11 +19,11 @@ class Background:
         self.__material.specular_intensity = 0.650
         self.__material.specular_hardness = 28
 
-
-def draw(self):
-        """
-        The background is made of a simple huge colored plane
-        """
-        bpy.ops.mesh.primitive_plane_add(radius=300, view_align=False, enter_editmode=False, location=(-20, 0, 0))
-        bpy.data.objects['Plane'].name = 'Background'
-        bpy.data.objects['Background'].rotation_euler[1] = 1    # In radians
+    def draw(self):
+            """
+            The background is made of a simple huge colored plane
+            """
+            bpy.ops.mesh.primitive_plane_add(radius=300, view_align=False, enter_editmode=False, location=(-20, 0, 0))
+            bpy.data.objects['Plane'].name = 'Background'
+            bpy.data.objects['Background'].rotation_euler[1] = 1    # In radians
+            bpy.data.objects['Background'].data.materials.append(self.__material)
