@@ -4,39 +4,104 @@
 """
 Class Mol of the blend_mol project, contain all the data corresponding to a molecule
 """
-from mol_draw.state import State
+from mol_draw.atom import Atom
+from mol_draw.bond import Bond
 
 
 class Mol:
-    def __init__(self, path):
+    def __init__(self, path, nb):
         """
-
+        It just takes the complete path to the file and a number (used to draw the file in a specific layer)
         """
-        self.TYPES = ['cis', 'cdetach', 'tdetach', 'trans', 'Hydrogeno_approche', 'Hydrogeno']  # Const types
-        self.__states = [State(path, 'cis'), State(path, 'cdetach'), State(path, 'tdetach'),
-                         State(path, 'trans'), State(path, 'Hydrogeno_approche'), State(path, 'Hydrogeno')]
-        self.__path = path  # path where the info of the molecule is stored (files.mol2)
+        self.__path = path
+        self.__data = []  # @MOLECULE from file
+        self.__atoms = []  # list of atoms
+        self.__bonds = []  # list of links between atoms
+        self.__number = nb
 
-    # Getter and setter
-    def get_states(self):
-        return self.__states
+    def __get_atom_by_number(self, number):
+        for a in self.__atoms:
+            if a.number == int(number):
+                return a
 
-    def get_state_by_name(self, name):
-        try:
-            assert (str(name).strip() in self.TYPES)
-        except:
-            print('**Error: bad type given in mol::get_states : {}'.format(name))
-        return self.__states[self.TYPES.index(str(name).strip())]
+    def get_atoms(self):
+        return self.__atoms
+
+    def get_bonds(self):
+        return self.__bonds
+
+    def get_number(self):
+        return self.__number
 
     def get_path(self):
-        return self.__path
+            return self.__path
 
-    states = property(get_states)
+    atoms = property(get_atoms)
+    bonds = property(get_bonds)
+    number = property(get_number)
     path = property(get_path)
 
     def read(self):
         """
-        Read method used to read and load molecules
+        Read the corresponding mol2 file and fill State attributes
         """
-        for state in self.__states:
-            state.read()
+        bool_data = False
+        bool_atoms = False
+        bool_bonds = False
+
+        tmp_data = []
+        tmp_atoms = []
+        tmp_bonds = []
+
+        with open(self.__path, 'r') as mol_file:
+            for l in mol_file.readlines():
+                if not '#' in l and l != '\n':
+                    if 'MOLECULE' in l:
+                        bool_data = True
+                        bool_atoms = False
+                        bool_bonds = False
+                    elif 'ATOM' in l:
+                        bool_data = False
+                        bool_atoms = True
+                        bool_bonds = False
+                    elif 'BOND' in l:
+                        bool_data = False
+                        bool_atoms = False
+                        bool_bonds = True
+                    elif bool_data:
+                        tmp_data.append(l)
+                    elif bool_atoms:
+                        tmp_atoms.append(l)
+                    elif bool_bonds:
+                        tmp_bonds.append(l)
+
+        # Format raw strings and fill attributes
+        # Data
+        self.__data = tmp_data
+
+        # Atoms
+        for a in tmp_atoms:
+            atom = Atom()
+            tmp = a.split('    ')
+            atom.number, atom.name = tmp[0].split(' ')
+
+            if len(tmp[-1].split(' ')) == 3:
+                atom.z, atom.type = tmp[-1].split(' ')[1:3]
+            else:
+                atom.z, atom.type = tmp[-1].split(' ')
+            atom.z = float(atom.z)
+            atom.x = float(tmp[1])
+            atom.y = float(tmp[2])
+            if int(atom.number) <= 9:
+                atom.name = '{}0{}'.format(atom.type, atom.number)
+            self.__atoms.append(atom)
+
+        # Bonds
+        for b in tmp_bonds:
+            bond = Bond()
+            b = [eval(o) for o in b.split(' ')[1:]]
+            a1 = self.__get_atom_by_number(b[0])
+            a2 = self.__get_atom_by_number(b[1])
+            bond.atoms = [a1, a2]
+            bond.order = b[2]
+            self.__bonds.append(bond)

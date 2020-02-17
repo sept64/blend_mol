@@ -22,18 +22,20 @@ class MolDraw(bpy.types.Operator):
     def execute(self, context):
         path_folder = ""
         if os.name == 'nt':     # Microsoft
-            path_folder = "D:\\Titane64\\Documents\\Blender\\data_mol"
+            path_folder = "D:\\Titane64\\Documents\\Blender\\data_mol\\"
         if os.name == 'posix':      # Linux
-            path_folder = "/home/tsotirop/Perso/blend_mol/molecules"
+            path_folder = "/home/tsotirop/Perso/blend_mol/molecules/"
         else:
             exit("ERROR: system is neither linux nor windows. Exiting.")
-        # Read cis mol file and fill mol classe
-        mol = Mol(path_folder)
-        mol.read()
 
-        # Draw and animate
-        drawer = Drawer(mol)
-        drawer.draw()
+        # Read mol files and draw them
+        for r, d, f in os.walk(path_folder):
+            for file in f:
+                mol = Mol(path_folder + file)
+                mol.read()
+                # Draw
+                drawer = Drawer(mol)
+                drawer.draw()
 
         return {'FINISHED'}
 
