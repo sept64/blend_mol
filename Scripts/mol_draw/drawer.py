@@ -39,27 +39,23 @@ class Drawer:
         self.__materials['H'].specular_intensity = 0
         self.__materials['O'].specular_intensity = 0
 
-    def draw(self):
+    def draw(self, layer, name):
         """
         Draws all the molecule's states in different layers
-        :return:
+        :param: layer: number (int) of the layer
+        :param: name: name of the molecule
         """
+        layers = [False, False, False, False, False, False, False, False, False, False, False, False, False,
+                  False, False, False, False, False, False, False]
+        layers[layer] = True
 
-        layer_cmp = 0
-        for state_name in self.__mol.TYPES:
-            layers = [False, False, False, False, False, False, False, False, False, False, False, False, False,
-                      False, False, False, False, False, False, False]
-            layers[layer_cmp] = True
-            state = self.__mol.get_state_by_name(state_name)
+        for atom in self.__mol.atoms:
+            self.add_atom(atom, name, layers)
 
-            for atom in state.atoms:
-                self.add_atom(atom, state_name, layers)
+        for bond in self.__mol.bonds:
+            self.add_bond(bond, name, layers)
 
-            for bond in state.bonds:
-                self.add_bond(bond, state_name, layers)
-            layer_cmp += 1
-
-    def add_atom(self, atom, state_name, layers):
+    def add_atom(self, atom, name, layers):
         """
         Draw an atom in blender
         """
@@ -71,14 +67,15 @@ class Drawer:
                                                  enter_editmode=False, location=(atom.x, atom.y, atom.z), layers=layers)
         bpy.ops.object.shade_smooth()
         obj = bpy.data.objects['Sphere']
-        obj.name = '{}_{}'.format(atom.name, state_name)
+        obj.name = '{}_{}'.format(atom.name, name)
         obj.data.materials.append(self.__materials[atom.type])  # add the material to the object
 
     def add_bond(self, bond, state_name, layers):
         """
         Draw a bond in blender
+        Total paste from :
+            https://blender.stackexchange.com/questions/110177/connecting-two-points-with-a-line-curve-via-python-script
         """
-        # Total paste from https://blender.stackexchange.com/questions/110177/connecting-two-points-with-a-line-curve-via-python-script
         ob = self.__compute_bond_coords(bond)
         self.__materials[bond.name] = bpy.data.materials.new(name=bond.name)
         self.__materials[bond.name].use_transparency = True

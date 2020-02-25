@@ -6,9 +6,9 @@
 Main function of the mol_draw project
 """
 
-import bpy
 import os
 
+import bpy
 from mol_draw.drawer import Drawer
 from mol_draw.mol import Mol
 
@@ -21,21 +21,31 @@ class MolDraw(bpy.types.Operator):
 
     def execute(self, context):
         path_folder = ""
-        if os.name == 'nt':     # Microsoft
+        if os.name == 'nt':  # Microsoft
             path_folder = "D:\\Titane64\\Documents\\Blender\\data_mol\\"
-        if os.name == 'posix':      # Linux
+        if os.name == 'posix':  # Linux
             path_folder = "/home/tsotirop/Perso/blend_mol/molecules/"
         else:
             exit("ERROR: system is neither linux nor windows. Exiting.")
-
+        print('In path: {}'.format(path_folder))
         # Read mol files and draw them
-        for r, d, f in os.walk(path_folder):
-            for file in f:
-                mol = Mol(path_folder + file)
-                mol.read()
-                # Draw
-                drawer = Drawer(mol)
-                drawer.draw()
+        files = []
+        for _, _, f in os.walk(path_folder):
+            print('\tFiles are: {}'.format(f))
+            files = f
+            break
+
+        layer = 0
+        for file in files:
+            path_to_mol = path_folder + file
+            print('Drawing molecule: {}'.format(path_to_mol))
+            mol = Mol(path_to_mol)
+            mol.read()
+            print(mol)
+            # Draw
+            drawer = Drawer(mol)
+            drawer.draw(layer, file)
+            layer += 1
 
         return {'FINISHED'}
 
@@ -43,12 +53,12 @@ class MolDraw(bpy.types.Operator):
 def register():
     bpy.utils.register_class(MolDraw)
     bpy.types.Scene.conf_path = bpy.props.StringProperty \
-    (
-        name="Root Path",
-        default="",
-        description="Define the root path of the project",
-        subtype='DIR_PATH'
-    )
+            (
+            name="Root Path",
+            default="",
+            description="Define the root path of the project",
+            subtype='DIR_PATH'
+        )
     print("Start")
 
 

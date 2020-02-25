@@ -9,15 +9,14 @@ from mol_draw.bond import Bond
 
 
 class Mol:
-    def __init__(self, path, nb):
+    def __init__(self, path):
         """
-        It just takes the complete path to the file and a number (used to draw the file in a specific layer)
+        It just takes the complete path to the file
         """
         self.__path = path
         self.__data = []  # @MOLECULE from file
         self.__atoms = []  # list of atoms
         self.__bonds = []  # list of links between atoms
-        self.__number = nb
 
     def __get_atom_by_number(self, number):
         for a in self.__atoms:
@@ -30,15 +29,11 @@ class Mol:
     def get_bonds(self):
         return self.__bonds
 
-    def get_number(self):
-        return self.__number
-
     def get_path(self):
-            return self.__path
+        return self.__path
 
     atoms = property(get_atoms)
     bonds = property(get_bonds)
-    number = property(get_number)
     path = property(get_path)
 
     def read(self):
@@ -105,3 +100,9 @@ class Mol:
             bond.atoms = [a1, a2]
             bond.order = b[2]
             self.__bonds.append(bond)
+
+    def __str__(self):
+        return 'Molecule path: {}' \
+               '\n\t data: {}' \
+               '\n\t atoms: {}' \
+               '\n\t bonds: {}'.format(self.__path, self.__data, self.__atoms, self.__bonds)

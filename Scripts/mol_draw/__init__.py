@@ -3,7 +3,7 @@ bl_info = {
     "category": "Object",
 }
 
-modulesNames = ['main', 'mol', 'state', 'atom', 'bond', 'drawer']
+modulesNames = ['main', 'mol', 'atom', 'bond', 'drawer']
 
 import sys
 import importlib
